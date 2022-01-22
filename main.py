@@ -1,16 +1,13 @@
 from time import sleep
-from turtle import pu
 from typing import List
 import pyautogui
-import cv2
 import numpy as np
-import keyword
 
 import sys
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
-from PyQt6.QtWidgets import QMainWindow, QApplication, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt, QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt6.QtGui import QPainter, QPen
+from PyQt6.QtWidgets import QApplication, QPushButton, QWidget
 
 DISPLAY_RATIO = 1
 
@@ -24,16 +21,32 @@ def testMouve():
         pyautogui.moveRel(10, 10)
 
 
+class Detector(QObject):
+    wandDetected = pyqtSignal(list)
+    
+    @pyqtSlot()
+    def run(self):
+        while True:
+            sleep(0.05)
+            wands = findWands()
+            print(f"Running detection, found : {wands}")
+            self.wandDetected.emit(wands)
+
+
 class Overlay(QWidget):
     def __init__(self):
         super().__init__()
-        self.setFixedHeight(2160)
-        self.setFixedWidth(3840)
-
         
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         # self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+
+        self.detector = Detector()
+        self.detectorThread = QThread()
+        self.detector.wandDetected.connect(self.handleFoundWands)
+        self.detector.moveToThread(self.detectorThread)
+        self.detectorThread.started.connect(self.detector.run)
+        self.detectorThread.start()
 
 
         self.toggle_btn = QPushButton("Exit", self)
@@ -48,38 +61,32 @@ class Overlay(QWidget):
         self.draw_btn.setGeometry(440, 150, 100, 30)
         self.draw_btn.clicked.connect(self.remove_rectangle)
 
-
-        self.rectangles = findWands()
+        self.rectangles = []
 
         self.start = 0
         
-
-        """ self.setGeometry(
-            QtWidgets.QStyle.alignedRect(
-                QtCore.Qt.LeftToRight, QtCore.Qt.AlignCenter,
-                QtCore.QSize(220, 32),
-                QtWidgets.qApp.desktop().availableGeometry()
-        ))"""
-
     def remove_rectangle(self):
-        # self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.rectangles.pop()
         self.update()
 
     def draw_rectangle(self):
-        # self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         rect = [np.random.randint(1920 - 150), np.random.randint(1080 - 100), np.random.randint(150), np.random.randint(100)]
         self.rectangles.append(rect)
+        self.update()
+
+    def handleFoundWands(self, wands: List[List[int]]):
+        inflation = 2
+        enflatedWands = [[w[0] - inflation, w[1] - inflation, w[2] + inflation*2, w[3] + inflation*2] for w in wands]
+        self.rectangles = enflatedWands
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setPen(QPen(Qt.GlobalColor.green, 1))
-        painter.setBrush(QBrush(QColor(0, 255, 0, 80), Qt.BrushStyle.SolidPattern))
+        # painter.setBrush(QBrush(QColor(0, 255, 0, 80), Qt.BrushStyle.SolidPattern))
         for rect in self.rectangles:
             painter.drawRect(*rect)
         painter.end()
-        print(self.rectangles)
 
 
 if __name__ == '__main__':
