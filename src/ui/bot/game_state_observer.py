@@ -24,12 +24,16 @@ class HighDPIPositionsSanitizer:
 
 class GameStateObserverHandler(QObject):
     game_state_changed = pyqtSignal(GameState)
-    
-    def __init__(self, fetchGameState: FetchGameState, positionSanitizer: HighDPIPositionsSanitizer) -> None:
+
+    def __init__(
+        self,
+        fetchGameState: FetchGameState,
+        positionSanitizer: HighDPIPositionsSanitizer,
+    ) -> None:
         super().__init__()
         self.fetch_game_state = fetchGameState
         self.position_sanitizer = positionSanitizer
-        
+
     @pyqtSlot()
     def run(self) -> None:
         while True:
@@ -42,8 +46,15 @@ class GameStateObserverHandler(QObject):
 
 
 class GameStateObserver:
-    def __init__(self, fetchGameState: FetchGameState, gameStateChangedCallback: Callable, displayRatio: float) -> None:
-        self.handler = GameStateObserverHandler(fetchGameState, HighDPIPositionsSanitizer(displayRatio))
+    def __init__(
+        self,
+        fetchGameState: FetchGameState,
+        gameStateChangedCallback: Callable,
+        displayRatio: float,
+    ) -> None:
+        self.handler = GameStateObserverHandler(
+            fetchGameState, HighDPIPositionsSanitizer(displayRatio)
+        )
 
         self.thread = QThread()
 
@@ -51,8 +62,5 @@ class GameStateObserver:
         self.handler.moveToThread(self.thread)
         self.thread.started.connect(self.handler.run)
 
-
     def start(self) -> None:
         self.thread.start()
-
-

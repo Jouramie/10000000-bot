@@ -10,7 +10,7 @@ from src.ui.overlay.overlay import Overlay
 
 logger = logging.getLogger(__name__)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     logger.info(f"Failsafe points {pyautogui.FAILSAFE_POINTS}")
 
@@ -20,7 +20,9 @@ if __name__ == '__main__':
 
     fetch_game_state = FetchGameState()
     main = Overlay()
-    game_state_observer = GameStateObserver(fetch_game_state, main.on_game_state_change, displayRatio)
+    game_state_observer = GameStateObserver(
+        fetch_game_state, main.on_game_state_change, displayRatio
+    )
 
     game_state_observer.start()
     main.showMaximized()

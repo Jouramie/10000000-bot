@@ -3,11 +3,12 @@ import pyautogui
 from copy import deepcopy
 from typing import List
 
+
 def find_tiles():
     return [
         [tile.left, tile.top, tile.width, tile.height]
-        for tile in pyautogui.locateAllOnScreen('assets/tiles/sword.png') 
-    ] 
+        for tile in pyautogui.locateAllOnScreen("assets/tiles/sword.png")
+    ]
 
 
 class GameState:
