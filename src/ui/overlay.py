@@ -1,10 +1,21 @@
-import numpy as np
+from typing import Union
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QPushButton, QWidget
 
 from src.domain.game_state import GameState
+from src.domain.tile import TileType
+
+TILE_COLORS = {
+    TileType.CHEST: Qt.GlobalColor.magenta,
+    TileType.KEY: Qt.GlobalColor.green,
+    TileType.LOGS: Qt.GlobalColor.darkYellow,
+    TileType.ROCKS: Qt.GlobalColor.darkBlue,
+    TileType.SHIELD: Qt.GlobalColor.darkGreen,
+    TileType.SWORD: Qt.GlobalColor.blue,
+    TileType.WAND: Qt.GlobalColor.red,
+}
 
 
 class Overlay(QWidget):
@@ -23,42 +34,27 @@ class Overlay(QWidget):
 
         self.draw_btn = QPushButton("Draw rectangle", self)
         self.draw_btn.setGeometry(1820, 150, 100, 30)
-        self.draw_btn.clicked.connect(self.draw_rectangle)
 
         self.draw_btn = QPushButton("Remove rectangle", self)
         self.draw_btn.setGeometry(1940, 150, 100, 30)
-        self.draw_btn.clicked.connect(self.remove_rectangle)
 
-        self.enflatedTiles = []
+        self.game_state: Union[GameState, None] = None
 
         self.start = 0
 
-    def remove_rectangle(self):
-        self.enflatedTiles.pop()
-        self.update()
-
-    def draw_rectangle(self):
-        rect = [
-            np.random.randint(1920 - 150),
-            np.random.randint(1080 - 100),
-            np.random.randint(150),
-            np.random.randint(100),
-        ]
-        self.enflatedTiles.append(rect)
-        self.update()
-
     def on_game_state_change(self, game_state: GameState):
-        self.enflatedTiles = [
-            [tile[0] - 2, tile[1] - 2, tile[2] + 5, tile[3] + 5]
-            for tile in game_state.tiles
-        ]
+        self.game_state = game_state
         self.update()
 
     # Called by self.update()
     def paintEvent(self, event):
+        if self.game_state is None:
+            return
+
         painter = QPainter(self)
-        painter.setPen(QPen(Qt.GlobalColor.green, 1))
         # painter.setBrush(QBrush(QColor(0, 255, 0, 80), Qt.BrushStyle.SolidPattern))
-        for rect in self.enflatedTiles:
+        for tile in self.game_state.tiles:
+            rect = [tile.left - 2, tile.top - 2, tile.height + 5, tile.width + 5]
+            painter.setPen(QPen(TILE_COLORS[tile.tile_type], 1))
             painter.drawRect(*rect)
         painter.end()
