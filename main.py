@@ -8,15 +8,13 @@ from src.domain.game_state import FetchGameState
 from src.ui.bot.game_state_observer import GameStateObserver
 from src.ui.overlay.overlay import Overlay
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 if __name__ == "__main__":
-
-    logger.info(f"Failsafe points {pyautogui.FAILSAFE_POINTS}")
-
     app = QApplication(sys.argv)
     displayRatio = app.devicePixelRatio()
-    logger.info(f"ratio = {displayRatio}")
 
     fetch_game_state = FetchGameState()
     main = Overlay()

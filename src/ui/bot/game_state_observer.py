@@ -40,7 +40,7 @@ class GameStateObserverHandler(QObject):
             sleep(0.1)
             # TODO save gameState, only trigger update when it changed (only saving hash could be easier)
             game_state = self.fetch_game_state.execute()
-            logger.info(f"GameState actually is {game_state}.")
+            logger.debug(f"GameState actually is {game_state}.")
             self.position_sanitizer.sanitize_inplace(game_state)
             self.game_state_changed.emit(game_state)
 

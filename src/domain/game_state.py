@@ -15,6 +15,9 @@ class GameState:
     def __init__(self) -> None:
         self.tiles: List[List[int]] = []
 
+    def __str__(self) -> str:
+        return f"Tiles{{{str(self.tiles)}}}"
+
 
 class FetchGameState:
     def __init__(self) -> None:
