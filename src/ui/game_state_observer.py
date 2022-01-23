@@ -36,7 +36,7 @@ class GameStateObserverHandler(QObject):
 
     def __init__(
         self,
-        fetch_game_state: Callable,
+        fetch_game_state: Callable[[], GameState],
         position_sanitizer: HighDPIPositionsSanitizer,
     ) -> None:
         super().__init__()
@@ -64,8 +64,8 @@ class GameStateObserverHandler(QObject):
 class GameStateObserver:
     def __init__(
         self,
-        fetch_game_state: Callable,
-        game_state_changed_callback: Callable,
+        fetch_game_state: Callable[[], GameState],
+        game_state_changed_callback: Callable[[GameState], None],
         display_ratio: float,
     ) -> None:
         self.handler = GameStateObserverHandler(

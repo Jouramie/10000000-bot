@@ -20,9 +20,7 @@ TILE_ASSETS = {
 
 def find_tiles():
     return [
-        Tile(tile_type, tile.left, tile.top, tile.height, tile.width)
-        for tile_type, asset in TILE_ASSETS.items()
-        for tile in pyautogui.locateAllOnScreen(asset)
+        Tile(tile_type, tile.left, tile.top, tile.height, tile.width) for tile_type, asset in TILE_ASSETS.items() for tile in pyautogui.locateAllOnScreen(asset)
     ]
 
 
@@ -31,9 +29,8 @@ class AutoGuiGameStateDetector(GameStateDetector):
         super().__init__()
 
     def detect_game_state(self) -> GameState:
-        game_state = GameState()
         logger.debug("Finding tiles.")
-        game_state.tiles = find_tiles()
+        game_state = GameState(tiles=find_tiles())
         logger.debug(f"Found {len(game_state.tiles)} tiles.")
 
         return game_state
