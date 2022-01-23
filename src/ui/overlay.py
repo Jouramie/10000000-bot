@@ -4,8 +4,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QPushButton, QWidget
 
-from src.domain.game_state import GameState
 from src.domain.tile import TileType
+from src.ui.model import GameStateModel
 
 TILE_COLORS = {
     TileType.CHEST: Qt.GlobalColor.magenta,
@@ -24,9 +24,7 @@ class Overlay(QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         # self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
-        )
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
 
         self.toggle_btn = QPushButton("Exit", self)
         self.toggle_btn.setGeometry(1700, 150, 100, 30)
@@ -38,11 +36,11 @@ class Overlay(QWidget):
         self.draw_btn = QPushButton("Remove rectangle", self)
         self.draw_btn.setGeometry(1940, 150, 100, 30)
 
-        self.game_state: Union[GameState, None] = None
+        self.game_state: Union[GameStateModel, None] = None
 
         self.start = 0
 
-    def on_game_state_change(self, game_state: GameState):
+    def on_game_state_change(self, game_state: GameStateModel):
         self.game_state = game_state
         self.update()
 
@@ -55,6 +53,6 @@ class Overlay(QWidget):
         # painter.setBrush(QBrush(QColor(0, 255, 0, 80), Qt.BrushStyle.SolidPattern))
         for tile in self.game_state.tiles:
             rect = [tile.left - 2, tile.top - 2, tile.height + 5, tile.width + 5]
-            painter.setPen(QPen(TILE_COLORS[tile.tile_type], 1))
+            painter.setPen(QPen(TILE_COLORS[tile.type], 1))
             painter.drawRect(*rect)
         painter.end()

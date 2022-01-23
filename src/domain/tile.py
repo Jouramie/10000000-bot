@@ -1,4 +1,6 @@
+from dataclasses import dataclass, field
 from enum import Enum, auto
+from typing import List, Set, Tuple, Sized, Iterable
 
 
 class TileType(Enum):
@@ -11,18 +13,89 @@ class TileType(Enum):
     WAND = auto()
 
 
-class Tile:
-    def __init__(
-        self, tile_type: TileType, left: int, top: int, height: int, width: int
-    ) -> None:
-        self.tile_type = tile_type
-        self.left = left
-        self.top = top
-        self.height = height
-        self.width = width
+@dataclass(frozen=True)
+class GridPosition:
+    x: int
+    y: int
 
-    def __str__(self):
-        return (
-            f"Tile{{type: {self.tile_type}, "
-            f"left: {self.left}, top: {self.top}, height: {self.height}, width: {self.width} }}"
-        )
+    def __lt__(self, other) -> bool:
+        return (self.y, self.x) < (other.y, other.x)
+
+
+@dataclass(frozen=True)
+class ScreenSquare:
+    left: int
+    top: int
+    height: int
+    width: int
+
+    def __lt__(self, other) -> bool:
+        return (self.top, self.left) < (other.top, other.left)
+
+
+@dataclass(frozen=True)
+class Tile:
+    type: TileType
+    screen_square: ScreenSquare
+    grid_position: GridPosition
+
+    def has_type(self, tile_type: TileType) -> bool:
+        return self.type == tile_type
+
+
+def find_pairs_in_lines(lines: List[List[Tile]]) -> Set[Tuple[Tile]]:
+    return set().union(*(find_pairs_in_line(line) for line in lines))
+
+
+def find_pairs_in_line(line: List[Tile]) -> Set[Tuple[Tile]]:
+    pairs = {find_pair_in_triple(line[i : i + 3]) for i in range(0, len(line) - 2)}
+    return {pair for pair in pairs if pair is not None}
+
+
+def find_pair_in_triple(triple: List[Tile]) -> Tuple[Tile] | None:
+    different_types = {tile.type for tile in triple}
+
+    if len(different_types) != 2:
+        return
+
+    potential_type = different_types.pop()
+    potential_pair = tuple(tile for tile in triple if tile.type == potential_type)
+    if len(potential_pair) == 2:
+        return potential_pair
+    else:
+        potential_type = different_types.pop()
+        return tuple(tile for tile in triple if tile.type == potential_type)
+
+
+@dataclass(frozen=True)
+class Grid(Sized, Iterable[Tile]):
+    """
+    8x7 56 tiles
+    self.size.x=8
+    self.size.y=7
+    """
+
+    tiles: List[Tile] = field(default_factory=list)
+    size: GridPosition = GridPosition(0, 0)
+
+    def __iter__(self):
+        return iter(self.tiles)
+
+    def __len__(self) -> int:
+        return len(self.tiles)
+
+    def get_row(self, y) -> List[Tile]:
+        return self.tiles[y * self.size.x : (y + 1) * self.size.x]
+
+    def get_column(self, x) -> List[Tile]:
+        return self.tiles[x :: self.size.x]
+
+    def get_rows(self) -> List[List[Tile]]:
+        return [self.tiles[i : i + self.size.x] for i in range(0, len(self), self.size.x)]
+
+    def get_columns(self) -> List[List[Tile]]:
+        return [self.tiles[i :: self.size.x] for i in range(0, self.size.x)]
+
+    # TODO
+    def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:
+        return find_pairs_in_lines(self.get_columns() + self.get_rows())

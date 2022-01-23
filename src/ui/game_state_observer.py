@@ -5,7 +5,7 @@ from typing import Callable
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 
 from src.domain.game_state import GameState
-from src.domain.tile import Tile
+from src.ui.model import GameStateModel, TileModel, to_model
 
 logger = logging.getLogger(__name__)
 
@@ -14,12 +14,12 @@ class HighDPIPositionsSanitizer:
     def __init__(self, display_ratio: float) -> None:
         self.display_ratio = display_ratio
 
-    def sanitize_game_state(self, game_state: GameState) -> GameState:
-        return GameState(tiles=[self.sanitize_tile(tile) for tile in game_state.tiles])
+    def sanitize_game_state(self, game_state: GameStateModel) -> GameStateModel:
+        return GameStateModel(tiles=[self.sanitize_tile(tile) for tile in game_state.tiles])
 
-    def sanitize_tile(self, tile: Tile) -> Tile:
-        return Tile(
-            tile.tile_type,
+    def sanitize_tile(self, tile: TileModel) -> TileModel:
+        return TileModel(
+            tile.type,
             self.sanitize_pos(tile.left),
             self.sanitize_pos(tile.top),
             self.sanitize_pos(tile.height),
@@ -32,7 +32,7 @@ class HighDPIPositionsSanitizer:
 
 # TODO probably don't need another thread for this. Observer could be in the bot.
 class GameStateObserverHandler(QObject):
-    game_state_changed = pyqtSignal(GameState)
+    game_state_changed = pyqtSignal(GameStateModel)
 
     def __init__(
         self,
@@ -51,7 +51,7 @@ class GameStateObserverHandler(QObject):
                 sleep(0.1)
                 # TODO save gameState, only trigger update when it changed (only saving hash could be easier)
                 logger.debug("Fetching GameState.")
-                game_state = self.fetch_game_state()
+                game_state = to_model(self.fetch_game_state())
 
                 game_state = self.position_sanitizer.sanitize_game_state(game_state)
 
@@ -59,6 +59,8 @@ class GameStateObserverHandler(QObject):
 
         except Exception as e:
             logger.exception(e)
+        finally:
+            logger.info("GameStateObserverHandler is stopped.")
 
 
 class GameStateObserver:
@@ -68,9 +70,7 @@ class GameStateObserver:
         game_state_changed_callback: Callable[[GameState], None],
         display_ratio: float,
     ) -> None:
-        self.handler = GameStateObserverHandler(
-            fetch_game_state, HighDPIPositionsSanitizer(display_ratio)
-        )
+        self.handler = GameStateObserverHandler(fetch_game_state, HighDPIPositionsSanitizer(display_ratio))
 
         self.thread = QThread()
 
