@@ -4,7 +4,7 @@ from typing import Callable
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 
-from src.domain.game_state import FetchGameState, GameState
+from src.domain.game_state import GameState
 from src.domain.tile import Tile
 
 logger = logging.getLogger(__name__)
@@ -30,12 +30,13 @@ class HighDPIPositionsSanitizer:
         return int(float(pos) / self.display_ratio)
 
 
+# TODO probably don't need another thread for this. Observer could be in the bot.
 class GameStateObserverHandler(QObject):
     game_state_changed = pyqtSignal(GameState)
 
     def __init__(
         self,
-        fetch_game_state: FetchGameState,
+        fetch_game_state: Callable,
         position_sanitizer: HighDPIPositionsSanitizer,
     ) -> None:
         super().__init__()
@@ -49,9 +50,9 @@ class GameStateObserverHandler(QObject):
             while True:
                 sleep(0.1)
                 # TODO save gameState, only trigger update when it changed (only saving hash could be easier)
-                game_state = self.fetch_game_state.execute()
+                logger.debug("Fetching GameState.")
+                game_state = self.fetch_game_state()
 
-                logger.debug(f"GameState actually is {game_state}.")
                 game_state = self.position_sanitizer.sanitize_game_state(game_state)
 
                 self.game_state_changed.emit(game_state)
@@ -63,7 +64,7 @@ class GameStateObserverHandler(QObject):
 class GameStateObserver:
     def __init__(
         self,
-        fetch_game_state: FetchGameState,
+        fetch_game_state: Callable,
         game_state_changed_callback: Callable,
         display_ratio: float,
     ) -> None:

@@ -20,13 +20,22 @@ class GameStateDetector(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class FetchGameState:
+game_state = GameState()
+
+
+class UpdateGameState:
     def __init__(self, detector: GameStateDetector) -> None:
-        self.game_state = GameState()
         self.detector = detector
 
     def execute(self) -> GameState:
-        self.game_state = self.detector.detect_game_state()
+        global game_state
+        game_state = self.detector.detect_game_state()
 
-        logger.info(f"GameState updated. {{{len(self.game_state.tiles)} tiles, }}")
-        return self.game_state
+        logger.info(f"GameState updated. {{{len(game_state.tiles)} tiles, }}")
+        return game_state
+
+
+class FetchGameState:
+    def execute(self) -> GameState:
+        global game_state
+        return game_state
