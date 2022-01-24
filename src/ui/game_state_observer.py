@@ -48,7 +48,6 @@ class GameStateObserverHandler(QObject):
         try:
             logger.info("Starting GameStateObserverHandler now running.")
             while True:
-                sleep(0.1)
                 # TODO save gameState, only trigger update when it changed (only saving hash could be easier)
                 logger.debug("Fetching GameState.")
                 game_state = to_model(self.fetch_game_state())
@@ -57,6 +56,7 @@ class GameStateObserverHandler(QObject):
 
                 self.game_state_changed.emit(game_state)
 
+                sleep(0.1)
         except Exception as e:
             logger.exception(e)
         finally:

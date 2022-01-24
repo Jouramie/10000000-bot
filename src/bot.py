@@ -18,12 +18,12 @@ class Bot:
         logger.info("Bot is running.")
         try:
             while True:
-                sleep(0.1)
                 logger.info("Updating game state.")
+
                 game_state = self.update_game_state()
                 possible_moves = game_state.find_possible_moves()
-                for possible_move in possible_moves:
-                    logger.debug(tuple(str(tile) for tile in possible_move))
+
+                sleep(0.1)
         except Exception as e:
             logger.exception(e)
         finally:
