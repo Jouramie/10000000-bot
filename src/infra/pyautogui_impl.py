@@ -24,7 +24,7 @@ GRID_SIZE_X = 8
 GRID_SIZE_Y = 7
 GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 
-MOVE_SPEED = 0.7 / 600
+MOVE_SPEED = 1 / 600
 
 
 def find_grid() -> Grid:
@@ -64,16 +64,18 @@ class PyAutoGuiGameStateDetector(GameStateDetector):
 
 class PyAutoGuiTileMover(TileMover):
     def execute(self, move: Move):
-        logger.debug(f"Moving tile {move.tile_to_move.grid_position} to {move.destination}.")
+        logger.info(
+            f"Completing {move.get_combo_type()} "
+            f"({move.pair[0].grid_position.x}, {move.pair[0].grid_position.y}) "
+            f"({move.pair[1].grid_position.x}, {move.pair[1].grid_position.y}) "
+            f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
+            f"moving to ({move.grid_destination.x}, {move.grid_destination.y})"
+        )
 
         start_drag = move.tile_to_move.screen_square.find_center()
-        end_drag = ScreenSquare(
-            move.pair[0].screen_square.left, move.pair[0].screen_square.top, move.pair[0].screen_square.height * 3, move.pair[0].screen_square.width
-        ).find_center()
+        end_drag = move.calculate_screen_destination()
 
         logger.debug(f"Starting drag from {start_drag}.")
         pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
-        logger.debug(f"Mouse at {pyautogui.position()}.")
         logger.debug(f"Ending drag to {end_drag}.")
         pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOVE_SPEED * start_drag.distance_between(end_drag))
-        logger.debug(f"Mouse at {pyautogui.position()}.")

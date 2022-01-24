@@ -22,7 +22,7 @@ class GameStateModel:
 
 @singledispatch
 def to_model(obj):
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 @to_model.register

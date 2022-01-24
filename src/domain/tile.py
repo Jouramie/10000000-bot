@@ -22,6 +22,21 @@ class Point:
     def __lt__(self, other) -> bool:
         return (self.y, self.x) < (other.y, other.x)
 
+    def __mul__(self, other):
+        if isinstance(other, int):
+            return Point(self.x * other, self.y * other)
+        raise NotImplementedError()
+
+    def __add__(self, other):
+        if isinstance(other, type(self)):
+            return Point(self.x + other.x, self.y + other.y)
+        raise NotImplementedError()
+
+    def __sub__(self, other):
+        if isinstance(other, type(self)):
+            return Point(self.x - other.x, self.y - other.y)
+        raise NotImplementedError()
+
     def distance_between(self, other) -> int:
         return int(sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2))
 
