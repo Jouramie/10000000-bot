@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from src.domain.tile import GridPosition, Grid
+from src.domain.tile import Point, Grid
 
 
 class TestGivenEmptyGrid(TestCase):
     def when_arrange_tiles_as_grid_then_grid_is_empty(self):
-        grid = Grid([], GridPosition(0, 0))
+        grid = Grid([], Point(0, 0))
 
         arranged_tiles = grid.get_columns()
 
@@ -13,7 +13,7 @@ class TestGivenEmptyGrid(TestCase):
 
 
 class TestFilledGrid(TestCase):
-    grid = Grid([0, 1, 2, 3, 4, 5], GridPosition(3, 2))
+    grid = Grid([0, 1, 2, 3, 4, 5], Point(3, 2))
 
     def when_get_columns_then_grid_is_arranged(self):
         columns = self.grid.get_columns()

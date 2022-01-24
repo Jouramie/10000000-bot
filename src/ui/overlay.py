@@ -2,7 +2,7 @@ import logging
 from typing import Union
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QPen
+from PyQt6.QtGui import QPainter, QPen, QBrush, QColor
 from PyQt6.QtWidgets import QPushButton, QWidget
 
 from src.domain.tile import TileType
@@ -10,15 +10,27 @@ from src.ui.model import GameStateModel
 
 logger = logging.getLogger(__name__)
 
-TILE_COLORS = {
-    TileType.CHEST: Qt.GlobalColor.magenta,
-    TileType.KEY: Qt.GlobalColor.green,
-    TileType.LOGS: Qt.GlobalColor.darkYellow,
-    TileType.ROCKS: Qt.GlobalColor.darkBlue,
-    TileType.SHIELD: Qt.GlobalColor.darkGreen,
-    TileType.SWORD: Qt.GlobalColor.blue,
-    TileType.WAND: Qt.GlobalColor.red,
+TILE_BORDER_COLORS = {
+    TileType.CHEST: QColor(255, 0, 255, 255),
+    TileType.KEY: QColor(0, 255, 0, 255),
+    TileType.LOGS: QColor(153, 76, 0, 255),
+    TileType.ROCKS: QColor(76, 76, 76, 255),
+    TileType.SHIELD: QColor(0, 101, 101, 255),
+    TileType.SWORD: QColor(0, 101, 204, 255),
+    TileType.WAND: QColor(255, 0, 0, 255),
 }
+
+TILE_FILL_COLORS = {
+    TileType.CHEST: QColor(255, 0, 255, 80),
+    TileType.KEY: QColor(0, 255, 0, 80),
+    TileType.LOGS: QColor(153, 76, 0, 80),
+    TileType.ROCKS: QColor(76, 76, 76, 80),
+    TileType.SHIELD: QColor(0, 101, 101, 80),
+    TileType.SWORD: QColor(0, 101, 204, 80),
+    TileType.WAND: QColor(255, 0, 0, 80),
+}
+
+GRID_TOP_OFFSET = -700
 
 
 class Overlay(QWidget):
@@ -55,9 +67,9 @@ class Overlay(QWidget):
             return
 
         painter = QPainter(self)
-        # painter.setBrush(QBrush(QColor(0, 255, 0, 80), Qt.BrushStyle.SolidPattern))
         for tile in self.game_state.tiles:
-            rect = [tile.left - 2, tile.top - 2, tile.height + 5, tile.width + 5]
-            painter.setPen(QPen(TILE_COLORS[tile.type], 1))
+            rect = [tile.left, tile.top + GRID_TOP_OFFSET, tile.height, tile.width]
+            painter.setPen(QPen(TILE_BORDER_COLORS[tile.type], 1))
+            painter.setBrush(QBrush(TILE_FILL_COLORS[tile.type], Qt.BrushStyle.SolidPattern))
             painter.drawRect(*rect)
         painter.end()

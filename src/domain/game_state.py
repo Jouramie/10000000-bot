@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Set
 
 from src.domain.move import Move
-from src.domain.tile import Grid, GridPosition
+from src.domain.tile import Grid, Point
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,7 +33,7 @@ class GameState:
 
                 matching_tiles = [tile for tile in row if tile.type == pair[0].type]
                 for matching_tile in matching_tiles:
-                    movements.add(Move(pair, matching_tile, GridPosition(pair[0].grid_position.x, missing_row_no)))
+                    movements.add(Move(pair, matching_tile, Point(pair[0].grid_position.x, missing_row_no)))
 
         logger.debug(f"Movements found {movements}")
 

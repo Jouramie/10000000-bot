@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from math import sqrt
 from typing import List, Set, Tuple, Sized, Iterable
 
 
@@ -14,12 +15,15 @@ class TileType(Enum):
 
 
 @dataclass(frozen=True)
-class GridPosition:
+class Point:
     x: int
     y: int
 
     def __lt__(self, other) -> bool:
         return (self.y, self.x) < (other.y, other.x)
+
+    def distance_between(self, other) -> int:
+        return int(sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2))
 
 
 @dataclass(frozen=True)
@@ -32,15 +36,15 @@ class ScreenSquare:
     def __lt__(self, other) -> bool:
         return (self.top, self.left) < (other.top, other.left)
 
-    def find_center(self) -> Tuple[int, int]:
-        return self.left + int(self.width / 2), self.top + int(self.height / 2)
+    def find_center(self) -> Point:
+        return Point(self.left + int(self.width / 2), self.top + int(self.height / 2))
 
 
 @dataclass(frozen=True)
 class Tile:
     type: TileType
     screen_square: ScreenSquare
-    grid_position: GridPosition
+    grid_position: Point
 
     def has_type(self, tile_type: TileType) -> bool:
         return self.type == tile_type
@@ -79,7 +83,7 @@ class Grid(Sized, Iterable[Tile]):
     """
 
     tiles: List[Tile] = field(default_factory=list)
-    size: GridPosition = GridPosition(0, 0)
+    size: Point = Point(0, 0)
 
     def __iter__(self):
         return iter(self.tiles)
@@ -102,3 +106,11 @@ class Grid(Sized, Iterable[Tile]):
     # TODO
     def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:
         return find_pairs_in_lines(self.get_columns() + self.get_rows())
+
+
+class InconsistentGrid(Grid):
+    def __init__(self, tiles: List[Tile], size: Point):
+        super().__init__(tiles, size)
+
+    def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:
+        return set()

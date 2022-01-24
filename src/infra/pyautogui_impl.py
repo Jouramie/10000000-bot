@@ -4,10 +4,11 @@ import pyautogui
 
 from src.domain.game_state import GameState, GameStateDetector
 from src.domain.move import TileMover, Move
-from src.domain.tile import TileType, Tile, ScreenSquare, GridPosition, Grid
+from src.domain.tile import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
 
 TILE_ASSETS = {
     TileType.CHEST: "assets/tiles/chest.png",
@@ -21,6 +22,9 @@ TILE_ASSETS = {
 
 GRID_SIZE_X = 8
 GRID_SIZE_Y = 7
+GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
+
+MOVE_SPEED = 0.7 / 600
 
 
 def find_grid() -> Grid:
@@ -37,11 +41,12 @@ def find_grid() -> Grid:
 
     # TODO attribution of the positions assumes all the tiles are detected. This could go really wrong.
     if len(tiles) != 56:
-        logger.warning(f"{len(tiles)} tiles detected. Expected 56.")
+        logger.warning(f"{len(tiles)} tiles detected. Expected 56. Returning InconsistentGrid.")
+        return InconsistentGrid([Tile(tile_type, screen_square, Point(-1, -1)) for tile_type, screen_square in tiles], GRID_SIZE)
 
     return Grid(
-        [Tile(*tile) for tile in [(*tiles[i + j * GRID_SIZE_X], GridPosition(i, j)) for j in range(0, GRID_SIZE_Y) for i in range(0, GRID_SIZE_X)]],
-        GridPosition(GRID_SIZE_X, GRID_SIZE_Y),
+        [Tile(*tile) for tile in [(*tiles[i + j * GRID_SIZE_X], Point(i, j)) for j in range(0, GRID_SIZE_Y) for i in range(0, GRID_SIZE_X)]],
+        GRID_SIZE,
     )
 
 
@@ -67,6 +72,8 @@ class PyAutoGuiTileMover(TileMover):
         ).find_center()
 
         logger.debug(f"Starting drag from {start_drag}.")
-        pyautogui.moveTo(*start_drag, duration=0.2)
+        pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
+        logger.debug(f"Mouse at {pyautogui.position()}.")
         logger.debug(f"Ending drag to {end_drag}.")
-        pyautogui.dragTo(*end_drag, duration=0.2)
+        pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOVE_SPEED * start_drag.distance_between(end_drag))
+        logger.debug(f"Mouse at {pyautogui.position()}.")

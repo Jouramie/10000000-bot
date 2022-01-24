@@ -26,8 +26,8 @@ class Bot:
                 possible_moves = game_state.find_possible_moves()
 
                 if not possible_moves:
-                    logger.error("No moves available.")
-                    exit()
+                    logger.warning("No moves available.")
+                    continue
 
                 self.move_tile(possible_moves.pop())
 
