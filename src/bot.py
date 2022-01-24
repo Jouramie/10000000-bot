@@ -3,14 +3,16 @@ from time import sleep
 from typing import Callable
 
 from src.domain.game_state import GameState
+from src.domain.move import Move
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 class Bot:
-    def __init__(self, update_game_state: Callable[[], GameState]) -> None:
+    def __init__(self, update_game_state: Callable[[], GameState], move_tile: Callable[[Move], None]) -> None:
         self.update_game_state = update_game_state
+        self.move_tile = move_tile
 
     def main_loop(
         self,
@@ -23,9 +25,16 @@ class Bot:
                 game_state = self.update_game_state()
                 possible_moves = game_state.find_possible_moves()
 
+                if not possible_moves:
+                    logger.error("No moves available.")
+                    exit()
+
+                self.move_tile(possible_moves.pop())
+
                 sleep(0.1)
         except Exception as e:
             logger.exception(e)
+            raise e
         finally:
             logger.info("Bot is stopped.")
 

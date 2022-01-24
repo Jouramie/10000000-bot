@@ -3,18 +3,18 @@ import logging
 from dataclasses import dataclass
 from typing import Set
 
-from src.domain.movement import Movement
+from src.domain.move import Move
 from src.domain.tile import Grid, GridPosition
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 @dataclass
 class GameState:
     grid: Grid = Grid()
 
-    def find_possible_moves(self) -> Set[Movement]:
+    def find_possible_moves(self) -> Set[Move]:
         pairs = self.grid.find_clusters()
 
         movements = set()
@@ -33,7 +33,7 @@ class GameState:
 
                 matching_tiles = [tile for tile in row if tile.type == pair[0].type]
                 for matching_tile in matching_tiles:
-                    movements.add(Movement(pair, matching_tile, GridPosition(pair[0].grid_position.x, missing_row_no)))
+                    movements.add(Move(pair, matching_tile, GridPosition(pair[0].grid_position.x, missing_row_no)))
 
         logger.debug(f"Movements found {movements}")
 

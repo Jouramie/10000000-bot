@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QApplication
 
 from src.bot import Bot
 from src.domain.game_state import FetchGameState, UpdateGameState
-from src.infra.autogui.game_state_detector_impl import AutoGuiGameStateDetector
+from src.infra.pyautogui_impl import PyAutoGuiGameStateDetector
 from src.ui.game_state_observer import GameStateObserver
 from src.ui.overlay import Overlay
 
@@ -23,7 +23,7 @@ class Context:
 
         # Domain
         fetch_game_state = FetchGameState()
-        update_game_state = UpdateGameState(AutoGuiGameStateDetector())
+        update_game_state = UpdateGameState(PyAutoGuiGameStateDetector())
 
         # Bot
         bot = Bot(update_game_state.execute)
@@ -31,9 +31,7 @@ class Context:
 
         # UI
         self.overlay = Overlay()
-        self.game_state_observer = GameStateObserver(
-            fetch_game_state.execute, self.overlay.on_game_state_change, display_ratio
-        )
+        self.game_state_observer = GameStateObserver(fetch_game_state.execute, self.overlay.on_game_state_change, display_ratio)
 
     def start(self):
         logger.info("Starting context.")

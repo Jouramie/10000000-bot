@@ -3,9 +3,11 @@ import logging
 import pyautogui
 
 from src.domain.game_state import GameState, GameStateDetector
+from src.domain.move import TileMover, Move
 from src.domain.tile import TileType, Tile, ScreenSquare, GridPosition, Grid
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 TILE_ASSETS = {
     TileType.CHEST: "assets/tiles/chest.png",
@@ -43,7 +45,7 @@ def find_grid() -> Grid:
     )
 
 
-class AutoGuiGameStateDetector(GameStateDetector):
+class PyAutoGuiGameStateDetector(GameStateDetector):
     def __init__(self) -> None:
         super().__init__()
 
@@ -53,3 +55,8 @@ class AutoGuiGameStateDetector(GameStateDetector):
         logger.debug(f"Found {len(game_state.grid)} tiles.")
 
         return game_state
+
+
+class PyAutoGuiTileMover(TileMover):
+    def execute(self, move: Move):
+        logger.debug(f"Moving tile {move.tile_to_move.grid_position} to {move.destination}.")
