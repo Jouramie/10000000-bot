@@ -67,7 +67,7 @@ class GameStateObserver:
     def __init__(
         self,
         fetch_game_state: Callable[[], GameState],
-        game_state_changed_callback: Callable[[GameState], None],
+        game_state_changed_callback: Callable[[GameStateModel], None],
         display_ratio: float,
     ) -> None:
         self.handler = GameStateObserverHandler(fetch_game_state, HighDPIPositionsSanitizer(display_ratio))

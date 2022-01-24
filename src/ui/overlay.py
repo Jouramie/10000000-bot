@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 from PyQt6.QtCore import Qt
@@ -6,6 +7,8 @@ from PyQt6.QtWidgets import QPushButton, QWidget
 
 from src.domain.tile import TileType
 from src.ui.model import GameStateModel
+
+logger = logging.getLogger(__name__)
 
 TILE_COLORS = {
     TileType.CHEST: Qt.GlobalColor.magenta,
@@ -30,15 +33,17 @@ class Overlay(QWidget):
         self.toggle_btn.setGeometry(1700, 150, 100, 30)
         self.toggle_btn.clicked.connect(self.close)
 
-        self.draw_btn = QPushButton("Draw rectangle", self)
-        self.draw_btn.setGeometry(1820, 150, 100, 30)
-
-        self.draw_btn = QPushButton("Remove rectangle", self)
-        self.draw_btn.setGeometry(1940, 150, 100, 30)
+        self.intangible_btn = QPushButton("Intangible", self)
+        self.intangible_btn.setGeometry(1820, 150, 100, 30)
+        self.intangible_btn.clicked.connect(self.on_intangible)
 
         self.game_state: Union[GameStateModel, None] = None
 
         self.start = 0
+
+    def on_intangible(self):
+        logger.info("Overlay set to intangible mode.")
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
     def on_game_state_change(self, game_state: GameStateModel):
         self.game_state = game_state

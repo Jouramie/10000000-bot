@@ -32,6 +32,9 @@ class ScreenSquare:
     def __lt__(self, other) -> bool:
         return (self.top, self.left) < (other.top, other.left)
 
+    def find_center(self) -> Tuple[int, int]:
+        return self.left + int(self.width / 2), self.top + int(self.height / 2)
+
 
 @dataclass(frozen=True)
 class Tile:

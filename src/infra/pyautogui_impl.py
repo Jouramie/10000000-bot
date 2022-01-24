@@ -37,7 +37,7 @@ def find_grid() -> Grid:
 
     # TODO attribution of the positions assumes all the tiles are detected. This could go really wrong.
     if len(tiles) != 56:
-        logger.warning(f"{len(tiles)} tiles detected. Expected 56. Returning 0 tiles.")
+        logger.warning(f"{len(tiles)} tiles detected. Expected 56.")
 
     return Grid(
         [Tile(*tile) for tile in [(*tiles[i + j * GRID_SIZE_X], GridPosition(i, j)) for j in range(0, GRID_SIZE_Y) for i in range(0, GRID_SIZE_X)]],
@@ -60,3 +60,13 @@ class PyAutoGuiGameStateDetector(GameStateDetector):
 class PyAutoGuiTileMover(TileMover):
     def execute(self, move: Move):
         logger.debug(f"Moving tile {move.tile_to_move.grid_position} to {move.destination}.")
+
+        start_drag = move.tile_to_move.screen_square.find_center()
+        end_drag = ScreenSquare(
+            move.pair[0].screen_square.left, move.pair[0].screen_square.top, move.pair[0].screen_square.height * 3, move.pair[0].screen_square.width
+        ).find_center()
+
+        logger.debug(f"Starting drag from {start_drag}.")
+        pyautogui.moveTo(*start_drag, duration=0.2)
+        logger.debug(f"Ending drag to {end_drag}.")
+        pyautogui.dragTo(*end_drag, duration=0.2)
