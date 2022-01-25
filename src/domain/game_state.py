@@ -19,22 +19,24 @@ class GameState:
 
         movements = set()
 
-        for pair in pairs:
+        for cluster in pairs:
 
-            if pair[0].grid_position.x == pair[1].grid_position.x:
-                if pair[0].grid_position.y + 2 == pair[1].grid_position.y:
-                    missing_row_nos = [pair[0].grid_position.y + 1]
-                elif pair[0].grid_position.y == 0:
-                    missing_row_nos = [2]
-                else:
-                    missing_row_nos = [pair[0].grid_position.y - 1, pair[0].grid_position.y + 2]
-                # FIXME this will crash of pair in last on column (will try to complete with row 9)
+            completing_row_indices = cluster.find_completing_row_indices()
+            if completing_row_indices:
+                x = cluster.get_completed_line_index()
+                completing_cluster_rows = {missing_row_no: self.grid.get_row(missing_row_no) for missing_row_no in completing_row_indices}
 
-                rows = {missing_row_no: self.grid.get_row(missing_row_no) for missing_row_no in missing_row_nos}
+                matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
+                for y, matching_tile in matching_tiles:
+                    movements.add(Move(cluster, matching_tile, Point(x, y)))
+            else:
+                y = cluster.get_completed_line_index()
+                completing_column_indices = cluster.find_completing_column_indices()
+                completing_cluster_columns = {missing_column_no: self.grid.get_column(missing_column_no) for missing_column_no in completing_column_indices}
 
-                matching_tiles = {(row_no, tile) for row_no, row in rows.items() for tile in row if tile.type == pair[0].type}
-                for row_no, matching_tile in matching_tiles:
-                    movements.add(Move(pair, matching_tile, Point(pair[0].grid_position.x, row_no)))
+                matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_columns.items() for tile in row if tile.type == cluster.type}
+                for x, matching_tile in matching_tiles:
+                    movements.add(Move(cluster, matching_tile, Point(x, y)))
 
         logger.debug(f"Movements found {movements}")
 

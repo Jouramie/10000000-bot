@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from math import sqrt
-from typing import List, Set, Tuple, Sized, Iterable
+from typing import List, Set, Tuple, Sized, Iterable, FrozenSet
 
 
 class TileType(Enum):
@@ -28,12 +28,12 @@ class Point:
         raise NotImplementedError()
 
     def __add__(self, other):
-        if isinstance(other, type(self)):
+        if type(self) is type(other):
             return Point(self.x + other.x, self.y + other.y)
         raise NotImplementedError()
 
     def __sub__(self, other):
-        if isinstance(other, type(self)):
+        if type(self) is type(other):
             return Point(self.x - other.x, self.y - other.y)
         raise NotImplementedError()
 
@@ -65,28 +65,48 @@ class Tile:
         return self.type == tile_type
 
 
-def find_pairs_in_lines(lines: List[List[Tile]]) -> Set[Tuple[Tile]]:
-    return set().union(*(find_pairs_in_line(line) for line in lines))
+@dataclass(frozen=True)
+class Cluster:
+    # FIXME this field is convenient but not necessary
+    type: TileType
+    tiles: FrozenSet[Tile]
 
+    def get_completed_line_index(self):
+        present_indices_in_line = self._find_present_indices_in_row()
 
-def find_pairs_in_line(line: List[Tile]) -> Set[Tuple[Tile]]:
-    pairs = {find_pair_in_triple(line[i : i + 3]) for i in range(0, len(line) - 2)}
-    return {pair for pair in pairs if pair is not None}
+        if len(present_indices_in_line) == 1:
+            return present_indices_in_line.pop()
 
+        # Get any element from the set
+        for tile in self.tiles:
+            return tile.grid_position.x
 
-def find_pair_in_triple(triple: List[Tile]) -> Tuple[Tile] | None:
-    different_types = {tile.type for tile in triple}
+    def _find_present_indices_in_row(self) -> set[int]:
+        return {tile.grid_position.y for tile in self.tiles}
 
-    if len(different_types) != 2:
-        return
+    def _find_present_indices_in_column(self) -> set[int]:
+        return {tile.grid_position.x for tile in self.tiles}
 
-    potential_type = different_types.pop()
-    potential_pair = tuple(tile for tile in triple if tile.type == potential_type)
-    if len(potential_pair) == 2:
-        return potential_pair
-    else:
-        potential_type = different_types.pop()
-        return tuple(tile for tile in triple if tile.type == potential_type)
+    def find_completing_row_indices(self) -> Set[int]:
+        return Cluster._find_completing_indices_in_line(self._find_present_indices_in_row())
+
+    def find_completing_column_indices(self) -> Set[int]:
+        return Cluster._find_completing_indices_in_line(self._find_present_indices_in_column())
+
+    @staticmethod
+    def _find_completing_indices_in_line(present_index_in_line: {Set[int]}) -> Set[int]:
+        if len(present_index_in_line) == 1:
+            return set()
+
+        min_present_tile = min(present_index_in_line)
+        max_present_tile = max(present_index_in_line)
+
+        if min_present_tile + 1 == max_present_tile:
+            return {min_present_tile - 1, max_present_tile + 1}
+
+        for i in range(min_present_tile, max_present_tile):
+            if i not in present_index_in_line:
+                return {i}
 
 
 @dataclass(frozen=True)
@@ -107,9 +127,13 @@ class Grid(Sized, Iterable[Tile]):
         return len(self.tiles)
 
     def get_row(self, y) -> List[Tile]:
+        if y == -1 or y == self.size.y + 1:
+            return []
         return self.tiles[y * self.size.x : (y + 1) * self.size.x]
 
     def get_column(self, x) -> List[Tile]:
+        if x == -1 or x == self.size.x + 1:
+            return []
         return self.tiles[x :: self.size.x]
 
     def get_rows(self) -> List[List[Tile]]:
@@ -118,9 +142,33 @@ class Grid(Sized, Iterable[Tile]):
     def get_columns(self) -> List[List[Tile]]:
         return [self.tiles[i :: self.size.x] for i in range(0, self.size.x)]
 
-    # TODO
-    def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:
-        return find_pairs_in_lines(self.get_columns() + self.get_rows())
+    # TODO handle min max
+    def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Cluster]:
+        return Grid._find_clusters_in_lines(self.get_columns() + self.get_rows())
+
+    @staticmethod
+    def _find_clusters_in_lines(lines: List[List[Tile]]) -> Set[Cluster]:
+        return set().union(*(Grid._find_pairs_in_line(line) for line in lines))
+
+    @staticmethod
+    def _find_pairs_in_line(line: List[Tile]) -> Set[Cluster]:
+        pairs = {Grid._find_pair_in_triple(line[i : i + 3]) for i in range(0, len(line) - 2)}
+        return {pair for pair in pairs if pair is not None}
+
+    @staticmethod
+    def _find_pair_in_triple(triple: List[Tile]) -> Cluster | None:
+        different_types = {tile.type for tile in triple}
+
+        if len(different_types) != 2:
+            return
+
+        potential_type = different_types.pop()
+        potential_cluster = frozenset(tile for tile in triple if tile.type == potential_type)
+        if len(potential_cluster) == 2:
+            return Cluster(potential_type, potential_cluster)
+        else:
+            potential_type = different_types.pop()
+            return Cluster(potential_type, frozenset(tile for tile in triple if tile.type == potential_type))
 
 
 class InconsistentGrid(Grid):

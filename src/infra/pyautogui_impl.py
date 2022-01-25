@@ -1,4 +1,5 @@
 import logging
+from functools import reduce
 
 import pyautogui
 
@@ -65,10 +66,9 @@ class PyAutoGuiGameStateDetector(GameStateDetector):
 class PyAutoGuiTileMover(TileMover):
     def execute(self, move: Move):
         logger.info(
-            f"Completing {move.get_combo_type()} "
-            f"({move.pair[0].grid_position.x}, {move.pair[0].grid_position.y}) "
-            f"({move.pair[1].grid_position.x}, {move.pair[1].grid_position.y}) "
-            f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
+            f"Completing cluster{move.get_combo_type()} "
+            + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
+            + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
             f"moving to ({move.grid_destination.x}, {move.grid_destination.y})"
         )
 
