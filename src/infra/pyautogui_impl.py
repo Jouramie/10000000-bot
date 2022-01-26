@@ -50,7 +50,7 @@ def activate_window(title):
 
 
 def find_window_region(title):
-    activate_window(title)
+    # activate_window(title)
 
     window_handle = win32gui.FindWindow(None, title)
     win_region = win32gui.GetWindowRect(window_handle)

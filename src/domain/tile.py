@@ -12,6 +12,7 @@ class TileType(Enum):
     SHIELD = auto()
     SWORD = auto()
     WAND = auto()
+    STAR = auto()
 
 
 @dataclass(frozen=True)
