@@ -66,7 +66,7 @@ class Overlay(QWidget):
     # Called by self.update()
     def paintEvent(self, event):
         if self.game_state is None or not self.game_state.tiles:
-            logger.warning("Received no tiles to display :(")
+            logger.debug("Received no tiles to display :(")
             return
 
         min_left = min([tile.left for tile in self.game_state.tiles])

@@ -14,6 +14,9 @@ class TileType(Enum):
     WAND = auto()
     STAR = auto()
 
+    def __str__(self):
+        return self.name
+
 
 @dataclass(frozen=True)
 class Point:
@@ -37,6 +40,9 @@ class Point:
         if type(self) is type(other):
             return Point(self.x - other.x, self.y - other.y)
         raise NotImplementedError()
+
+    def __str__(self):
+        return str((self.x, self.y))
 
     def distance_between(self, other) -> int:
         return int(sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2))
@@ -64,6 +70,9 @@ class Tile:
 
     def has_type(self, tile_type: TileType) -> bool:
         return self.type == tile_type
+
+    def __str__(self):
+        return f"{{{str(self.type)} {str(self.grid_position)}}}"
 
 
 # TODO use stars in combo
@@ -130,21 +139,23 @@ class Grid(Sized, Iterable[Tile]):
     def __len__(self) -> int:
         return len(self.tiles)
 
+    def __str__(self):
+        grid = ""
+        for row in self.get_rows():
+            grid += str([str(tile) for tile in row]) + "\n"
+        return grid[:-1]
+
     def get_row(self, y) -> List[Tile]:
-        if y == -1 or y == self.size.y + 1:
-            return []
-        return self.tiles[y * self.size.x : (y + 1) * self.size.x]
+        return [tile for tile in self.tiles if tile.grid_position.y == y]
 
     def get_column(self, x) -> List[Tile]:
-        if x == -1 or x == self.size.x + 1:
-            return []
-        return self.tiles[x :: self.size.x]
+        return [tile for tile in self.tiles if tile.grid_position.x == x]
 
     def get_rows(self) -> List[List[Tile]]:
-        return [self.tiles[i : i + self.size.x] for i in range(0, len(self), self.size.x)]
+        return [self.get_row(y) for y in range(0, self.size.y)]
 
     def get_columns(self) -> List[List[Tile]]:
-        return [self.tiles[i :: self.size.x] for i in range(0, self.size.x)]
+        return [self.get_column(x) for x in range(0, self.size.x)]
 
     # TODO handle min max
     def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Cluster]:
@@ -164,6 +175,12 @@ class Grid(Sized, Iterable[Tile]):
         different_types = {tile.type for tile in triple}
 
         if len(different_types) != 2:
+            return
+
+        # Excludes clusters with too much missing tiles
+        grid_xs = {tile.grid_position.x for tile in triple}
+        grid_ys = {tile.grid_position.y for tile in triple}
+        if sum(grid_xs) - min(grid_xs) * 3 != 3 and sum(grid_ys) - min(grid_ys) * 3 != 3:
             return
 
         potential_type = different_types.pop()

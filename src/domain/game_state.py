@@ -17,6 +17,11 @@ class GameState:
     def find_possible_moves(self) -> Set[Move]:
         pairs = self.grid.find_clusters()
 
+        logger.debug(f"Grid: {str(self.grid)}")
+        if not pairs:
+            logger.warning("Found no clusters.")
+            return set()
+
         movements = set()
 
         for cluster in pairs:

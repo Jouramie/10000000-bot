@@ -96,13 +96,11 @@ def find_grid() -> Grid:
     min_top = min([tile[1].top for tile in prospect_tiles])
 
     tiles = []
-
-    # TODO there should only be one tile per grid position
-
     for tile in prospect_tiles:
         screen_square = tile[1]
         grid_position = Point(round((screen_square.left - min_left) / TILE_DIMENSION), round((screen_square.top - min_top) / TILE_DIMENSION))
 
+        # TODO instead of ignoring the tile, it should be recalculated (only between the found possibilities to speed up)
         if grid_position not in {t.grid_position for t in tiles}:
             tiles.append(Tile(tile[0], screen_square, grid_position))
 
@@ -132,7 +130,7 @@ class PyAutoGuiGameStateDetector(GameStateDetector):
 class PyAutoGuiTileMover(TileMover):
     def execute(self, move: Move):
         logger.info(
-            f"Completing cluster{move.get_combo_type()} "
+            f"Completing cluster {move.get_combo_type()} "
             + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
             + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
             f"moving to ({move.grid_destination.x}, {move.grid_destination.y})"
