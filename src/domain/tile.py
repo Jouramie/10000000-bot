@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from math import sqrt
 from typing import List, Set, Tuple, Sized, Iterable, FrozenSet
@@ -117,8 +117,8 @@ class Grid(Sized, Iterable[Tile]):
     self.size.y=7
     """
 
-    tiles: List[Tile] = field(default_factory=list)
-    size: Point = Point(0, 0)
+    tiles: List[Tile]
+    size: Point
 
     def __iter__(self):
         return iter(self.tiles)
@@ -172,7 +172,9 @@ class Grid(Sized, Iterable[Tile]):
 
 
 class InconsistentGrid(Grid):
-    def __init__(self, tiles: List[Tile], size: Point):
+    def __init__(self, tiles=None, size: Point = Point(0, 0)):
+        if tiles is None:
+            tiles = []
         super().__init__(tiles, size)
 
     def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:

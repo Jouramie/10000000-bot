@@ -1,14 +1,17 @@
 import logging
 from functools import reduce
+from typing import List
 
 import pyautogui
+import pyscreeze
+import win32gui
 
 from src.domain.game_state import GameState, GameStateDetector
 from src.domain.move import TileMover, Move
 from src.domain.tile import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 TILE_ASSETS = {
@@ -27,6 +30,46 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 
 MOVE_SPEED = 1 / 600
 
+REAL_WINDOW_TITLE = "10000000"
+TESTING_WINDOW_TITLE = "C:\\Users\\Utilisateur\\dev\\10000000\\broken-grid,png.png - Greenshot image editor"
+GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
+
+
+def activate_window(title):
+    matching_windows = [window for window in pyautogui.getWindowsWithTitle(title) if window.title == title]
+    if len(matching_windows) == 0:
+        return None
+    elif len(matching_windows) > 1:
+        logger.warning(f"Looks like there are many windows of {title} opened...")
+
+    try:
+        win = matching_windows[0]
+        win.activate()
+    except Exception as e:
+        logger.warning(e)
+
+
+def find_window_region(title):
+    activate_window(title)
+
+    window_handle = win32gui.FindWindow(None, title)
+    win_region = win32gui.GetWindowRect(window_handle)
+
+    return win_region[0], win_region[1], win_region[2] - win_region[0], win_region[3] - win_region[1]
+
+
+def locate_all_on_window(needle_image, window_title) -> List[pyscreeze.Box]:
+    region = find_window_region(window_title)
+    window_screenshot = pyautogui.screenshot(region=region)
+    # window_screenshot.show()
+
+    logger.debug(f"Game window located at {region}.")
+    # TODO lower confidence and undupe images
+    return [
+        pyscreeze.Box(box.left + region[0], box.top + region[1], box.width, box.height)
+        for box in pyautogui.locateAll(needle_image, window_screenshot, grayscale=True)
+    ]
+
 
 def find_grid() -> Grid:
     """Should detect 8x7 56 tiles."""
@@ -35,7 +78,7 @@ def find_grid() -> Grid:
         [
             (tile_type, ScreenSquare(tile.left, tile.top, tile.height, tile.width))
             for tile_type, asset in TILE_ASSETS.items()
-            for tile in pyautogui.locateAllOnScreen(asset)
+            for tile in locate_all_on_window(asset, GAME_WINDOW_TITLE)
         ],
         key=lambda tile: tile[1],
     )

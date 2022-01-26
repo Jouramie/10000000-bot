@@ -11,6 +11,7 @@ mss = "^6.1.0"
 opencv-python = "^4.5.5"
 Pillow = "^9.0.0"
 PyQt6 = "^6.2.2"
+pywin32 = "^303"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^21.12b0"}
