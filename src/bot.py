@@ -31,6 +31,8 @@ class Bot:
 
                 self.move_tile(possible_moves.pop())
 
+                # TODO find objective
+
                 sleep(0.1)
         except Exception as e:
             logger.exception(e)

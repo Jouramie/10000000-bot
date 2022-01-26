@@ -32,7 +32,7 @@ class HighDPIPositionsSanitizer:
         return int(float(pos) / self.display_ratio)
 
 
-# TODO probably don't need another thread for this. Observer could be in the bot.
+# FIXME probably don't need another thread for this. Observer could be in the bot.
 class GameStateObserverHandler(QObject):
     game_state_changed = pyqtSignal(GameStateModel)
 

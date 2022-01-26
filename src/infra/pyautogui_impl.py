@@ -97,11 +97,14 @@ def find_grid() -> Grid:
 
     tiles = []
 
+    # TODO there should only be one tile per grid position
+
     for tile in prospect_tiles:
         screen_square = tile[1]
-        grid_left = round((screen_square.left - min_left) / TILE_DIMENSION)
-        grid_top = round((screen_square.top - min_top) / TILE_DIMENSION)
-        tiles.append(Tile(tile[0], screen_square, Point(grid_left, grid_top)))
+        grid_position = Point(round((screen_square.left - min_left) / TILE_DIMENSION), round((screen_square.top - min_top) / TILE_DIMENSION))
+
+        if grid_position not in {t.grid_position for t in tiles}:
+            tiles.append(Tile(tile[0], screen_square, grid_position))
 
     tiles = sorted(tiles, key=lambda tile: tile.grid_position)
 
