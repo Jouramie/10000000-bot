@@ -66,6 +66,9 @@ class Tile:
         return self.type == tile_type
 
 
+# TODO use stars in combo
+
+
 @dataclass(frozen=True)
 class Cluster:
     # FIXME this field is convenient but not necessary

@@ -22,6 +22,7 @@ TILE_ASSETS = {
     TileType.SHIELD: "assets/tiles/shield.png",
     TileType.SWORD: "assets/tiles/sword.png",
     TileType.WAND: "assets/tiles/wand.png",
+    TileType.STAR: "assets/tiles/star.png",
 }
 
 GRID_SIZE_X = 8
