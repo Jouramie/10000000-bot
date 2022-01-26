@@ -24,6 +24,8 @@ class HighDPIPositionsSanitizer:
             self.sanitize_pos(tile.top),
             self.sanitize_pos(tile.height),
             self.sanitize_pos(tile.width),
+            tile.grid_x,
+            tile.grid_y,
         )
 
     def sanitize_pos(self, pos: int) -> int:

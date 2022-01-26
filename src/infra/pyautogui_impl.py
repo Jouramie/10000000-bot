@@ -25,6 +25,8 @@ TILE_ASSETS = {
     TileType.STAR: "assets/tiles/star.png",
 }
 
+TILE_DIMENSION = 84
+
 GRID_SIZE_X = 8
 GRID_SIZE_Y = 7
 GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
@@ -32,12 +34,13 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 MOVE_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "C:\\Users\\Utilisateur\\dev\\10000000\\broken-grid,png.png - Greenshot image editor"
+TESTING_WINDOW_TITLE = "what.png - Greenshot image editor"
 GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
 
 
 def activate_window(title):
-    matching_windows = [window for window in pyautogui.getWindowsWithTitle(title) if window.title == title]
+    possible_game_windows = pyautogui.getWindowsWithTitle(title)
+    matching_windows = [window for window in possible_game_windows if window.title == title]
     if len(matching_windows) == 0:
         return None
     elif len(matching_windows) > 1:
@@ -53,12 +56,16 @@ def activate_window(title):
 def find_window_region(title):
     # activate_window(title)
 
+    possible_game_windows = [win.title for win in pyautogui.getWindowsWithTitle(title)]
+    logger.debug(f"Found {len(possible_game_windows)} possible game windows: {possible_game_windows}.")
+
     window_handle = win32gui.FindWindow(None, title)
     win_region = win32gui.GetWindowRect(window_handle)
 
     return win_region[0], win_region[1], win_region[2] - win_region[0], win_region[3] - win_region[1]
 
 
+# FIXME we should not take a screenshot for each tile type
 def locate_all_on_window(needle_image, window_title) -> List[pyscreeze.Box]:
     region = find_window_region(window_title)
     window_screenshot = pyautogui.screenshot(region=region)
@@ -75,24 +82,36 @@ def locate_all_on_window(needle_image, window_title) -> List[pyscreeze.Box]:
 def find_grid() -> Grid:
     """Should detect 8x7 56 tiles."""
 
-    tiles = sorted(
-        [
-            (tile_type, ScreenSquare(tile.left, tile.top, tile.height, tile.width))
-            for tile_type, asset in TILE_ASSETS.items()
-            for tile in locate_all_on_window(asset, GAME_WINDOW_TITLE)
-        ],
-        key=lambda tile: tile[1],
-    )
+    prospect_tiles = [
+        (tile_type, ScreenSquare(tile.left, tile.top, tile.height, tile.width))
+        for tile_type, asset in TILE_ASSETS.items()
+        for tile in locate_all_on_window(asset, GAME_WINDOW_TITLE)
+    ]
 
-    # TODO attribution of the positions assumes all the tiles are detected. This could go really wrong.
-    if len(tiles) != 56:
-        logger.warning(f"{len(tiles)} tiles detected. Expected 56. Returning InconsistentGrid.")
-        return InconsistentGrid([Tile(tile_type, screen_square, Point(-1, -1)) for tile_type, screen_square in tiles], GRID_SIZE)
+    if not prospect_tiles:
+        logger.warning(f"No tiles found. Returning InconsistentGrid")
+        return InconsistentGrid([], GRID_SIZE)
 
-    return Grid(
-        [Tile(*tile) for tile in [(*tiles[i + j * GRID_SIZE_X], Point(i, j)) for j in range(0, GRID_SIZE_Y) for i in range(0, GRID_SIZE_X)]],
-        GRID_SIZE,
-    )
+    min_left = min([tile[1].left for tile in prospect_tiles])
+    min_top = min([tile[1].top for tile in prospect_tiles])
+
+    tiles = []
+
+    for tile in prospect_tiles:
+        screen_square = tile[1]
+        grid_left = round((screen_square.left - min_left) / TILE_DIMENSION)
+        grid_top = round((screen_square.top - min_top) / TILE_DIMENSION)
+        tiles.append(Tile(tile[0], screen_square, Point(grid_left, grid_top)))
+
+    tiles = sorted(tiles, key=lambda tile: tile.grid_position)
+
+    size_x = len({tile.grid_position.x for tile in tiles})
+    size_y = len({tile.grid_position.y for tile in tiles})
+    if size_x != GRID_SIZE_X or size_y != GRID_SIZE_Y:
+        logger.warning(f"Detected grid is {size_x} / {size_y}. Expected grid should be {GRID_SIZE_X} / {GRID_SIZE_Y}. Returning InconsistentGrid")
+        return InconsistentGrid(tiles, GRID_SIZE)
+
+    return Grid(tiles, GRID_SIZE)
 
 
 class PyAutoGuiGameStateDetector(GameStateDetector):

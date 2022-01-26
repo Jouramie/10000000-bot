@@ -13,6 +13,8 @@ class TileModel:
     top: int
     height: int
     width: int
+    grid_x: int
+    grid_y: int
 
 
 @dataclass(frozen=True)
@@ -42,4 +44,12 @@ def _(li: list) -> list:
 
 @to_model.register
 def _(tile: Tile) -> TileModel:
-    return TileModel(tile.type, tile.screen_square.left, tile.screen_square.top, tile.screen_square.height, tile.screen_square.width)
+    return TileModel(
+        tile.type,
+        tile.screen_square.left,
+        tile.screen_square.top,
+        tile.screen_square.height,
+        tile.screen_square.width,
+        tile.grid_position.x,
+        tile.grid_position.y,
+    )

@@ -18,6 +18,7 @@ TILE_BORDER_COLORS = {
     TileType.SHIELD: QColor(0, 101, 101, 255),
     TileType.SWORD: QColor(0, 101, 204, 255),
     TileType.WAND: QColor(255, 0, 0, 255),
+    TileType.STAR: QColor(255, 255, 255, 255),
 }
 
 TILE_FILL_COLORS = {
@@ -28,6 +29,7 @@ TILE_FILL_COLORS = {
     TileType.SHIELD: QColor(0, 101, 101, 80),
     TileType.SWORD: QColor(0, 101, 204, 80),
     TileType.WAND: QColor(255, 0, 0, 80),
+    TileType.STAR: QColor(255, 255, 255, 80),
 }
 
 GRID_TOP_OFFSET = -700
@@ -63,12 +65,16 @@ class Overlay(QWidget):
 
     # Called by self.update()
     def paintEvent(self, event):
-        if self.game_state is None:
+        if self.game_state is None or not self.game_state.tiles:
+            logger.warning("Received no tiles to display :(")
             return
+
+        min_left = min([tile.left for tile in self.game_state.tiles])
+        min_top = min([tile.top for tile in self.game_state.tiles])
 
         painter = QPainter(self)
         for tile in self.game_state.tiles:
-            rect = [tile.left, tile.top + GRID_TOP_OFFSET, tile.height, tile.width]
+            rect = [min_left + tile.grid_x * tile.width, min_top + tile.grid_y * tile.height + GRID_TOP_OFFSET, tile.height, tile.width]
             painter.setPen(QPen(TILE_BORDER_COLORS[tile.type], 1))
             painter.setBrush(QBrush(TILE_FILL_COLORS[tile.type], Qt.BrushStyle.SolidPattern))
             painter.drawRect(*rect)
