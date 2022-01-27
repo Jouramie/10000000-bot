@@ -29,7 +29,14 @@ TILE_ASSETS = {
 TILE_DIMENSION = 84
 
 OBJETIVE_ASSETS = {
+    ObjectiveType.ZOMBIE: "assets/objectives/zombie.png",
+    ObjectiveType.SKELETON: "assets/objectives/skeleton.png",
     ObjectiveType.SKELETON_ARCHER: "assets/objectives/skeleton-archer.png",
+    ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier.png",
+    ObjectiveType.WHITE_DRAGON: "assets/objectives/white-dragon.png",
+    ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
+    ObjectiveType.CHEST: "assets/objectives/chest2.png",
+    ObjectiveType.DOOR: "assets/objectives/door.png",
 }
 
 
@@ -41,7 +48,7 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "so-many-errors.png - Greenshot image editor"
+TESTING_WINDOW_TITLE = "e.png - Greenshot image editor"
 GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
 
 
@@ -134,7 +141,8 @@ def find_objective() -> Objective:
     if not objectives:
         return create_objective()
 
-    return sorted(objectives, key=lambda x: x.screen_square)[0]
+    logger.info(f"Found objectives {objectives}.")
+    return sorted(objectives, key=lambda x: x.screen_square.left)[0]
 
 
 class PyAutoGuiGameStateDetector(GameStateDetector):
@@ -142,7 +150,6 @@ class PyAutoGuiGameStateDetector(GameStateDetector):
         super().__init__()
 
     def detect_game_state(self) -> GameState:
-        logger.debug("Finding tiles.")
         game_state = GameState(grid=find_grid(), objective=find_objective())
         logger.debug(f"Found {len(game_state.grid)} tiles.")
 
@@ -168,4 +175,5 @@ class PyAutoGuiTileMover(TileMover):
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
     print(find_objective())

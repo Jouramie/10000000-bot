@@ -67,7 +67,7 @@ class UpdateGameState:
         global game_state
         game_state = self.detector.detect_game_state()
 
-        logger.info(f"GameState updated. {{{len(game_state.grid)} tiles. Objective: {game_state.objective.type}.")
+        logger.info(f"GameState updated. {len(game_state.grid)} tiles. Objective: {game_state.objective.type}.")
         return game_state
 
 
