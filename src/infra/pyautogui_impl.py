@@ -32,7 +32,8 @@ OBJETIVE_ASSETS = {
     ObjectiveType.ZOMBIE: "assets/objectives/zombie.png",
     ObjectiveType.SKELETON: "assets/objectives/skeleton.png",
     ObjectiveType.SKELETON_ARCHER: "assets/objectives/skeleton-archer.png",
-    ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier.png",
+    ObjectiveType.T_REX: "assets/objectives/t-rex.png",
+    ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier2.png",
     ObjectiveType.WHITE_DRAGON: "assets/objectives/white-dragon.png",
     ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
@@ -48,7 +49,7 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "e.png - Greenshot image editor"
+TESTING_WINDOW_TITLE = "cant-find-objective.png - Greenshot image editor"
 GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
 
 

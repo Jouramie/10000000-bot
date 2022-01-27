@@ -29,7 +29,9 @@ class Bot:
                     logger.warning("No moves available.")
                     continue
 
-                self.move_tile(possible_moves.pop())
+                best_move = game_state.objective.select_best_move(possible_moves)
+
+                self.move_tile(best_move)
 
                 # TODO find objective
 

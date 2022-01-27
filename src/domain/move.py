@@ -34,6 +34,9 @@ class Move:
 
         return first_tile_center + self.grid_destination * unitary_distance
 
+    def calculate_impact(self, tile_type: TileType) -> int:
+        return 3 if self.cluster.type == tile_type else 0
+
 
 class TileMover(metaclass=abc.ABCMeta):
     @abc.abstractmethod
