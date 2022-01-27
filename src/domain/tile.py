@@ -50,10 +50,10 @@ class Point:
 
 @dataclass(frozen=True)
 class ScreenSquare:
-    left: int
-    top: int
-    height: int
-    width: int
+    left: int = 0
+    top: int = 0
+    height: int = 0
+    width: int = 0
 
     def __lt__(self, other) -> bool:
         return (self.top, self.left) < (other.top, other.left)
@@ -177,7 +177,7 @@ class Grid(Sized, Iterable[Tile]):
         if len(different_types) != 2:
             return
 
-        # Excludes clusters with too much missing tiles
+        # Excludes the clusters with too much missing tiles
         grid_xs = {tile.grid_position.x for tile in triple}
         grid_ys = {tile.grid_position.y for tile in triple}
         if sum(grid_xs) - min(grid_xs) * 3 != 3 and sum(grid_ys) - min(grid_ys) * 3 != 3:

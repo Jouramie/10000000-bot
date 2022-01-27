@@ -15,7 +15,7 @@ class HighDPIPositionsSanitizer:
         self.display_ratio = display_ratio
 
     def sanitize_game_state(self, game_state: GameStateModel) -> GameStateModel:
-        return GameStateModel(tiles=[self.sanitize_tile(tile) for tile in game_state.tiles])
+        return GameStateModel(tiles=[self.sanitize_tile(tile) for tile in game_state.tiles], objective=game_state.objective)
 
     def sanitize_tile(self, tile: TileModel) -> TileModel:
         return TileModel(

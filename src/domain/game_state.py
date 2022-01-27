@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Set
 
 from src.domain.move import Move
+from src.domain.objective import NoObjective, Objective
 from src.domain.tile import Grid, Point, InconsistentGrid
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ logger.setLevel(logging.INFO)
 @dataclass
 class GameState:
     grid: Grid = InconsistentGrid()
+    objective: Objective = NoObjective()
 
     def find_possible_moves(self) -> Set[Move]:
         pairs = self.grid.find_clusters()
@@ -65,7 +67,7 @@ class UpdateGameState:
         global game_state
         game_state = self.detector.detect_game_state()
 
-        logger.info(f"GameState updated. {{{len(game_state.grid)} tiles, }}")
+        logger.info(f"GameState updated. {{{len(game_state.grid)} tiles. Objective: {game_state.objective.type}.")
         return game_state
 
 

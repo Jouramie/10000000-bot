@@ -3,6 +3,7 @@ from functools import singledispatch
 from typing import List
 
 from src.domain.game_state import GameState
+from src.domain.objective import ObjectiveType, Objective
 from src.domain.tile import TileType, Grid, Tile
 
 
@@ -18,8 +19,14 @@ class TileModel:
 
 
 @dataclass(frozen=True)
+class ObjectiveModel:
+    type: ObjectiveType
+
+
+@dataclass(frozen=True)
 class GameStateModel:
     tiles: List[TileModel]
+    objective: ObjectiveModel
 
 
 @singledispatch
@@ -29,7 +36,7 @@ def to_model(obj):
 
 @to_model.register
 def _(game_state: GameState) -> GameStateModel:
-    return GameStateModel(to_model(game_state.grid))
+    return GameStateModel(to_model(game_state.grid), to_model(game_state.objective))
 
 
 @to_model.register
@@ -53,3 +60,8 @@ def _(tile: Tile) -> TileModel:
         tile.grid_position.x,
         tile.grid_position.y,
     )
+
+
+@to_model.register
+def _(objective: Objective) -> ObjectiveModel:
+    return ObjectiveModel(objective.type)

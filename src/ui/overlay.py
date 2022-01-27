@@ -2,8 +2,8 @@ import logging
 from typing import Union
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QPen, QBrush, QColor
-from PyQt6.QtWidgets import QPushButton, QWidget
+from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont
+from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QGraphicsDropShadowEffect
 
 from src.domain.tile import TileType
 from src.ui.model import GameStateModel
@@ -51,6 +51,18 @@ class Overlay(QWidget):
         self.intangible_btn.setGeometry(1820, 150, 100, 30)
         self.intangible_btn.clicked.connect(self.on_intangible)
 
+        self.objective_label = QLabel(self)
+        self.objective_label.setText("No objective yet")
+        self.objective_label.setGeometry(1700, 185, 500, 30)
+        font = QFont()
+        font.setBold(True)
+        self.objective_label.setFont(font)
+        effect = QGraphicsDropShadowEffect()
+        effect.setColor(QColor(255, 255, 255, 255))
+        effect.setOffset(0, 0)
+        effect.setBlurRadius(20)
+        self.objective_label.setGraphicsEffect(effect)
+
         self.game_state: Union[GameStateModel, None] = None
 
         self.start = 0
@@ -61,6 +73,7 @@ class Overlay(QWidget):
 
     def on_game_state_change(self, game_state: GameStateModel):
         self.game_state = game_state
+        self.objective_label.setText(repr(game_state.objective))
         self.update()
 
     # Called by self.update()
