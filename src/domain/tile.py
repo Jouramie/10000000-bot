@@ -13,6 +13,7 @@ class TileType(Enum):
     SWORD = auto()
     WAND = auto()
     STAR = auto()
+    UNKNOWN = auto()
 
     def __str__(self):
         return self.name
@@ -65,7 +66,7 @@ class ScreenSquare:
 @dataclass(frozen=True)
 class Tile:
     type: TileType
-    screen_square: ScreenSquare
+    screen_square: ScreenSquare | None
     grid_position: Point
 
     def has_type(self, tile_type: TileType) -> bool:
@@ -172,24 +173,19 @@ class Grid(Sized, Iterable[Tile]):
 
     @staticmethod
     def _find_pair_in_triple(triple: List[Tile]) -> Cluster | None:
-        different_types = {tile.type for tile in triple}
+        different_types = {tile.type for tile in triple if tile.type != TileType.UNKNOWN}
 
-        if len(different_types) != 2:
-            return
-
+        # FIXME might not be needed with the add of unknown tiles
         # Excludes the clusters with too much missing tiles
         grid_xs = {tile.grid_position.x for tile in triple}
         grid_ys = {tile.grid_position.y for tile in triple}
         if sum(grid_xs) - min(grid_xs) * 3 != 3 and sum(grid_ys) - min(grid_ys) * 3 != 3:
             return
 
-        potential_type = different_types.pop()
-        potential_cluster = frozenset(tile for tile in triple if tile.type == potential_type)
-        if len(potential_cluster) == 2:
-            return Cluster(potential_type, potential_cluster)
-        else:
-            potential_type = different_types.pop()
-            return Cluster(potential_type, frozenset(tile for tile in triple if tile.type == potential_type))
+        for potential_type in different_types:
+            potential_cluster = frozenset(tile for tile in triple if tile.type == potential_type)
+            if len(potential_cluster) == 2:
+                return Cluster(potential_type, potential_cluster)
 
 
 class InconsistentGrid(Grid):

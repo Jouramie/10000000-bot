@@ -8,6 +8,11 @@ from src.domain.move import Move
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# TODO
+# 1. Fill the grid with unknown tiles
+# 2. Calculate combo effects with visible tiles
+# 3. Complete missing scan with remaining of last move
+
 
 class Bot:
     def __init__(self, update_game_state: Callable[[], GameState], move_tile: Callable[[Move], None]) -> None:

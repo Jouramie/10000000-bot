@@ -28,8 +28,8 @@ class HighDPIPositionsSanitizer:
             tile.grid_y,
         )
 
-    def sanitize_pos(self, pos: int) -> int:
-        return int(float(pos) / self.display_ratio)
+    def sanitize_pos(self, pos: int | None) -> int | None:
+        return int(float(pos) / self.display_ratio) if pos is not None else None
 
 
 # FIXME probably don't need another thread for this. Observer could be in the bot.

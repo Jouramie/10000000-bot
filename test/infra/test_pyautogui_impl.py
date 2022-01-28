@@ -11,6 +11,7 @@ key_in_wrong_column_4_3 = Image.open("test/infra/key-in-wrong-column-4-3.png")
 sword_not_detected_1_6 = Image.open("test/infra/sword-not-detected-1-6.png")
 star_6_0 = Image.open("test/infra/star-6-0.png")
 so_many_errors = Image.open("test/infra/so-many-errors.png")
+while_combo = Image.open("test/infra/while-combo.png")
 
 
 class TestFindGrid(TestCase):
@@ -339,6 +340,72 @@ class TestFindGrid(TestCase):
             TileType.SHIELD,
             TileType.KEY,
             TileType.CHEST,
+            TileType.WAND,
+        ]
+
+        self.assertEqual(expected_grid, [tile.type for tile in grid])
+
+    @patch("pyautogui.screenshot", return_value=while_combo)
+    @patch("win32gui.GetWindowRect", return_value=(0, 0, while_combo.size[0], while_combo.size[1]))
+    def test_sword_not_detected_1_6(self, screenshot, get_window_rect):
+        grid = find_grid()
+
+        expected_grid = [
+            TileType.SWORD,
+            TileType.KEY,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.SWORD,
+            TileType.LOGS,
+            TileType.SWORD,
+            TileType.SWORD,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.WAND,
+            TileType.LOGS,
+            TileType.LOGS,
+            TileType.CHEST,
+            TileType.SHIELD,
+            TileType.LOGS,
+            TileType.KEY,
+            TileType.WAND,
+            TileType.CHEST,
+            TileType.ROCKS,
+            TileType.SHIELD,
+            TileType.WAND,
+            TileType.SHIELD,
+            TileType.LOGS,
+            TileType.ROCKS,
+            TileType.WAND,
+            TileType.KEY,
+            TileType.SHIELD,
+            TileType.CHEST,
+            TileType.WAND,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.LOGS,
+            TileType.KEY,
+            TileType.ROCKS,
+            TileType.WAND,
+            TileType.CHEST,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.SHIELD,
+            TileType.KEY,
+            TileType.LOGS,
+            TileType.SWORD,
+            TileType.ROCKS,
+            TileType.ROCKS,
+            TileType.LOGS,
+            TileType.ROCKS,
+            TileType.LOGS,
+            TileType.KEY,
             TileType.WAND,
         ]
 

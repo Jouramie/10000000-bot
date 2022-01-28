@@ -49,8 +49,8 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "cant-find-objective.png - Greenshot image editor"
-GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
+TESTING_WINDOW_TITLE = "while-combo.png - Greenshot image editor"
+GAME_WINDOW_TITLE = TESTING_WINDOW_TITLE
 
 
 def activate_window(title):
@@ -128,6 +128,15 @@ def find_grid() -> Grid:
     if size_x != GRID_SIZE_X or size_y != GRID_SIZE_Y:
         logger.warning(f"Detected grid is {size_x} / {size_y}. Expected grid should be {GRID_SIZE_X} / {GRID_SIZE_Y}. Returning InconsistentGrid")
         return InconsistentGrid(tiles, GRID_SIZE)
+
+    # FIXME there should be a better approximation... meh what ever
+
+    for y in range(0, GRID_SIZE_Y):
+        for x in range(0, GRID_SIZE_X):
+            index = x + y * GRID_SIZE_X
+            expected_grid_position = Point(x, y)
+            if len(tiles) <= index or tiles[index].grid_position != expected_grid_position:
+                tiles.insert(index, Tile(TileType.UNKNOWN, None, expected_grid_position))
 
     return Grid(tiles, GRID_SIZE)
 

@@ -1,7 +1,7 @@
 import abc
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, Callable, Set, List
+from typing import Dict, Callable, Set, List, Tuple
 
 from src.domain.move import Move
 from src.domain.tile import ScreenSquare, TileType
@@ -22,10 +22,14 @@ class ObjectiveType(Enum):
         return self.name
 
 
-def select_best_move(tile_types: List[TileType], possible_moves: Set[Move]):
+def _move_comparator(prioritized_tiles: List[TileType]) -> Callable[[Move], Tuple[int, ...]]:
+    return lambda move: tuple(move.calculate_impact(tile_type) for tile_type in prioritized_tiles)
+
+
+def select_best_move(prioritized_tiles: List[TileType], possible_moves: Set[Move]):
     ordered_moves = sorted(
         [move for move in possible_moves],
-        key=lambda move: max([move.calculate_impact(tile_type) for tile_type in tile_types]),
+        key=_move_comparator(prioritized_tiles),
         reverse=True,
     )
     return ordered_moves[0]
@@ -43,17 +47,17 @@ class Objective(metaclass=abc.ABCMeta):
 
 class MonsterObjective(Objective):
     def select_best_move(self, possible_moves: Set[Move]):
-        return select_best_move([TileType.SWORD, TileType.WAND], possible_moves)
+        return select_best_move([TileType.SWORD, TileType.WAND, TileType.LOGS, TileType.SHIELD, TileType.CHEST, TileType.ROCKS], possible_moves)
 
 
 class KeyObjective(Objective):
     def select_best_move(self, possible_moves: Set[Move]):
-        return select_best_move([TileType.KEY], possible_moves)
+        return select_best_move([TileType.KEY, TileType.LOGS, TileType.SHIELD, TileType.CHEST, TileType.ROCKS], possible_moves)
 
 
 class NoObjective(Objective):
     def select_best_move(self, possible_moves: Set[Move]):
-        return select_best_move([TileType.SHIELD, TileType.CHEST, TileType.ROCKS, TileType.LOGS], possible_moves)
+        return select_best_move([TileType.LOGS, TileType.SHIELD, TileType.CHEST, TileType.ROCKS], possible_moves)
 
 
 OBJECTIVE_CLASS_PER_TYPE: Dict[ObjectiveType, Callable[[ObjectiveType, ScreenSquare], Objective]] = {
