@@ -12,8 +12,8 @@ class TileModel:
     type: TileType
     left: int | None
     top: int | None
-    height: int
-    width: int
+    height: int | None
+    width: int | None
     grid_x: int
     grid_y: int
 
