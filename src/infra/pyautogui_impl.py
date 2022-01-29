@@ -6,8 +6,8 @@ import pyautogui
 import pyscreeze
 import win32gui
 
+from src.domain.grid import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid, Move
 from src.domain.objective import Objective, ObjectiveType, create_objective
-from src.domain.tile import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid, Move
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

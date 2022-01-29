@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass
 
+from src.domain.grid import Grid, InconsistentGrid, Move
 from src.domain.objective import NoObjective, Objective
-from src.domain.tile import Grid, InconsistentGrid, Move
 from src.infra.pyautogui_impl import detect_game_state
 
 logger = logging.getLogger(__name__)

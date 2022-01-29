@@ -3,8 +3,8 @@ from functools import singledispatch
 from typing import List
 
 from src.domain.game_state import GameState
+from src.domain.grid import TileType, Grid, Tile
 from src.domain.objective import ObjectiveType, Objective
-from src.domain.tile import TileType, Grid, Tile
 
 
 @dataclass(frozen=True)

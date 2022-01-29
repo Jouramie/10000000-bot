@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, Callable, Set, List, Tuple
 
-from src.domain.tile import ScreenSquare, TileType, Move
+from src.domain.grid import ScreenSquare, TileType, Move
 
 
 class ObjectiveType(Enum):

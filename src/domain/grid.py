@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from math import sqrt
-from typing import List, Set, Tuple, Sized, Iterable, FrozenSet
+from typing import List, Set, Tuple, Sized, Iterable, FrozenSet, Dict
 
 
 class TileType(Enum):
@@ -157,7 +157,7 @@ class Move:
         return 3 if self.cluster.type == tile_type else 0
 
 
-@dataclass(frozen=True)
+@dataclass
 class Grid(Sized, Iterable[Tile]):
     """
     8x7 56 tiles
@@ -185,6 +185,12 @@ class Grid(Sized, Iterable[Tile]):
 
     def get_column(self, x) -> List[Tile]:
         return [tile for tile in self.tiles if tile.grid_position.x == x]
+
+    def set_row(self, y, line: List[Tile]) -> None:
+        self.tiles[y * self.size.x : (y + 1) * self.size.x] = line
+
+    def set_column(self, x, line: List[Tile]) -> None:
+        self.tiles[x :: self.size.x] = line
 
     def get_rows(self) -> List[List[Tile]]:
         return [self.get_row(y) for y in range(0, self.size.y)]
@@ -234,9 +240,9 @@ class Grid(Sized, Iterable[Tile]):
             completing_row_indices = cluster.find_completing_row_indices()
             if completing_row_indices:
                 x = cluster.get_completed_line_index()
-                completing_cluster_rows = {missing_row_no: self.get_row(missing_row_no) for missing_row_no in completing_row_indices}
+                completing_cluster_rows = {missing_row_index: self.get_row(missing_row_index) for missing_row_index in completing_row_indices}
 
-                matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
+                matching_tiles = {(row_index, tile) for row_index, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
                 for y, matching_tile in matching_tiles:
                     movements.add(Move(cluster, matching_tile, Point(x, y)))
             else:
@@ -249,6 +255,38 @@ class Grid(Sized, Iterable[Tile]):
                     movements.add(Move(cluster, matching_tile, Point(x, y)))
 
         return movements
+
+    def simulate_line_shift(self, shift_start: Point, shift_destination: Point) -> Dict[TileType, int]:
+        """
+        1. Create simulated grid
+        1. Move tiles according to shift
+        2. Remove triple
+        """
+        simulated_grid = Grid(self.tiles, self.size)
+
+        simulated_grid.shift(shift_start, shift_destination)
+
+        # TODO remove completed clusters
+        # TODO gravity
+        # TODO loop remove completed clusters
+
+        return {}
+
+    def shift(self, shift_start: Point, shift_destination: Point) -> None:
+        assert shift_start.x == shift_destination.x or shift_start.y == shift_destination.y
+
+        shift = shift_destination - shift_start
+
+        if shift.y == 0:
+            line = self.get_row(shift_start.y)
+            distance = shift.x
+            new_line = [Tile(tile.type, None, Point(x, shift_start.y)) for x, tile in enumerate(line[-distance:] + line[:-distance])]
+            self.set_row(shift_start.y, new_line)
+        else:
+            line = self.get_column(shift_start.x)
+            distance = shift.y
+            new_line = [Tile(tile.type, None, Point(shift_start.x, y)) for y, tile in enumerate(line[-distance:] + line[:-distance])]
+            self.set_column(shift_start.x, new_line)
 
 
 class InconsistentGrid(Grid):
