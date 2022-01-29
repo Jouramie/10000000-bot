@@ -3,6 +3,8 @@ from enum import Enum, auto
 from math import sqrt
 from typing import List, Set, Tuple, Sized, Iterable, FrozenSet, Dict
 
+from frozendict import frozendict, FrozenOrderedDict
+
 
 class TileType(Enum):
     CHEST = auto()
@@ -80,10 +82,16 @@ class Tile:
 
 
 @dataclass(frozen=True)
-class Cluster:
+class Cluster(Sized, Iterable[Tile]):
     # FIXME this field is convenient but not necessary
     type: TileType
     tiles: FrozenSet[Tile]
+
+    def __iter__(self):
+        return iter(self.tiles)
+
+    def __len__(self) -> int:
+        return len(self.tiles)
 
     def get_completed_line_index(self):
         present_indices_in_line = self._find_present_indices_in_row()
@@ -96,10 +104,10 @@ class Cluster:
             return tile.grid_position.x
 
     def _find_present_indices_in_row(self) -> set[int]:
-        return {tile.grid_position.y for tile in self.tiles}
+        return {tile.grid_position.y for tile in self}
 
     def _find_present_indices_in_column(self) -> set[int]:
-        return {tile.grid_position.x for tile in self.tiles}
+        return {tile.grid_position.x for tile in self}
 
     def find_completing_row_indices(self) -> Set[int]:
         return Cluster._find_completing_indices_in_line(self._find_present_indices_in_row())
@@ -128,7 +136,12 @@ class Move:
     cluster: Cluster
     tile_to_move: Tile
     grid_destination: Point
-    # TODO impact
+    impact: FrozenOrderedDict[TileType, int]
+
+    def __str__(self):
+        return (
+            f"{{Move {str(self.tile_to_move)} -> {str(self.grid_destination)} " f"for { {str(tile_type):impact for tile_type, impact in self.impact.items()}}}}"
+        )
 
     def get_combo_type(self) -> TileType:
         return self.tile_to_move.type
@@ -157,7 +170,7 @@ class Move:
         return 3 if self.cluster.type == tile_type else 0
 
 
-@dataclass
+@dataclass(frozen=True)
 class Grid(Sized, Iterable[Tile]):
     """
     8x7 56 tiles
@@ -186,11 +199,15 @@ class Grid(Sized, Iterable[Tile]):
     def get_column(self, x) -> List[Tile]:
         return [tile for tile in self.tiles if tile.grid_position.x == x]
 
-    def set_row(self, y, line: List[Tile]) -> None:
-        self.tiles[y * self.size.x : (y + 1) * self.size.x] = line
+    def set_row(self, y, line: List[Tile]):
+        tiles = self.tiles.copy()
+        tiles[y * self.size.x : (y + 1) * self.size.x] = line
+        return Grid(tiles, self.size)
 
-    def set_column(self, x, line: List[Tile]) -> None:
-        self.tiles[x :: self.size.x] = line
+    def set_column(self, x, line: List[Tile]):
+        tiles = self.tiles.copy()
+        tiles[x :: self.size.x] = line
+        return Grid(tiles, self.size)
 
     def get_rows(self) -> List[List[Tile]]:
         return [self.get_row(y) for y in range(0, self.size.y)]
@@ -198,17 +215,14 @@ class Grid(Sized, Iterable[Tile]):
     def get_columns(self) -> List[List[Tile]]:
         return [self.get_column(x) for x in range(0, self.size.x)]
 
-    # TODO handle min max
-    def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Cluster]:
-        return Grid._find_clusters_in_lines(self.get_columns() + self.get_rows())
+    def get_lines(self) -> List[List[Tile]]:
+        return self.get_columns() + self.get_rows()
 
-    @staticmethod
-    def _find_clusters_in_lines(lines: List[List[Tile]]) -> Set[Cluster]:
-        return set().union(*(Grid._find_pairs_in_line(line) for line in lines))
+    def get_triples(self) -> List[List[Tile]]:
+        return [line[i : i + 3] for line in self.get_lines() for i in range(0, len(line) - 2)]
 
-    @staticmethod
-    def _find_pairs_in_line(line: List[Tile]) -> Set[Cluster]:
-        pairs = {Grid._find_pair_in_triple(line[i : i + 3]) for i in range(0, len(line) - 2)}
+    def find_clusters(self) -> Set[Cluster]:
+        pairs = {Grid._find_pair_in_triple(triple) for triple in self.get_triples()}
         return {pair for pair in pairs if pair is not None}
 
     @staticmethod
@@ -244,7 +258,8 @@ class Grid(Sized, Iterable[Tile]):
 
                 matching_tiles = {(row_index, tile) for row_index, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
                 for y, matching_tile in matching_tiles:
-                    movements.add(Move(cluster, matching_tile, Point(x, y)))
+                    destination = Point(x, y)
+                    movements.add(Move(cluster, matching_tile, destination, self.simulate_line_shift(matching_tile.grid_position, destination)))
             else:
                 y = cluster.get_completed_line_index()
                 completing_column_indices = cluster.find_completing_column_indices()
@@ -252,27 +267,37 @@ class Grid(Sized, Iterable[Tile]):
 
                 matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_columns.items() for tile in row if tile.type == cluster.type}
                 for x, matching_tile in matching_tiles:
-                    movements.add(Move(cluster, matching_tile, Point(x, y)))
+                    destination = Point(x, y)
+                    movements.add(Move(cluster, matching_tile, destination, self.simulate_line_shift(matching_tile.grid_position, destination)))
 
         return movements
 
     def simulate_line_shift(self, shift_start: Point, shift_destination: Point) -> Dict[TileType, int]:
         """
-        1. Create simulated grid
-        1. Move tiles according to shift
-        2. Remove triple
+        1. Shift
+        2. Remove combining tiles
+        3. Gravity
+        4. Loop 2-3
         """
-        simulated_grid = Grid(self.tiles, self.size)
+        simulated_grid = self.shift(shift_start, shift_destination)
 
-        simulated_grid.shift(shift_start, shift_destination)
+        combining_tiles = set()
+        new_combining_tiles, simulated_grid = simulated_grid.remove_completed_combos()
+        while new_combining_tiles:
+            combining_tiles |= new_combining_tiles
+            simulated_grid = simulated_grid.gravity()
+            new_combining_tiles, simulated_grid = simulated_grid.remove_completed_combos()
 
-        # TODO remove completed clusters
-        # TODO gravity
-        # TODO loop remove completed clusters
+        impact = dict()
+        for tile in combining_tiles:
+            if tile.type not in impact:
+                impact[tile.type] = 0
 
-        return {}
+            impact[tile.type] += 1
 
-    def shift(self, shift_start: Point, shift_destination: Point) -> None:
+        return frozendict(impact)
+
+    def shift(self, shift_start: Point, shift_destination: Point):
         assert shift_start.x == shift_destination.x or shift_start.y == shift_destination.y
 
         shift = shift_destination - shift_start
@@ -281,12 +306,39 @@ class Grid(Sized, Iterable[Tile]):
             line = self.get_row(shift_start.y)
             distance = shift.x
             new_line = [Tile(tile.type, None, Point(x, shift_start.y)) for x, tile in enumerate(line[-distance:] + line[:-distance])]
-            self.set_row(shift_start.y, new_line)
+            return self.set_row(shift_start.y, new_line)
         else:
             line = self.get_column(shift_start.x)
             distance = shift.y
             new_line = [Tile(tile.type, None, Point(shift_start.x, y)) for y, tile in enumerate(line[-distance:] + line[:-distance])]
-            self.set_column(shift_start.x, new_line)
+            return self.set_column(shift_start.x, new_line)
+
+    def remove_completed_combos(self):
+        combining_tiles = set()
+        for triple in self.get_triples():
+            different_types = {tile.type for tile in triple}
+            if len(different_types) == 1 and TileType.UNKNOWN not in different_types:
+                combining_tiles |= set(triple)
+
+        remaining_tiles = [tile for tile in self.tiles if tile not in combining_tiles]
+
+        return combining_tiles, InconsistentGrid(remaining_tiles, self.size)
+
+    def gravity(self):
+        fallen_tiles = []
+        for column in self.get_columns():
+            missing_tiles = self.size.y - len(column)
+
+            if missing_tiles == 0:
+                fallen_tiles += column
+                continue
+
+            for i, tile in enumerate(column):
+                fallen_tiles.append(Tile(tile.type, None, Point(tile.grid_position.x, missing_tiles + i)))
+
+        fallen_tiles.sort(key=lambda x: x.grid_position)
+
+        return InconsistentGrid(fallen_tiles, self.size)
 
 
 class InconsistentGrid(Grid):

@@ -6,7 +6,7 @@ from src.domain.objective import NoObjective, Objective
 from src.infra.pyautogui_impl import detect_game_state
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 @dataclass
@@ -21,7 +21,11 @@ class GameState:
             logger.warning("No moves available.")
             return None
 
-        logger.debug(f"Movements found {possible_moves}")
+        str_moves = ""
+        for move in possible_moves:
+            str_moves += str(move) + "\n"
+
+        logger.debug(f"Evaluating moves {str_moves[:-1]}")
 
         return self.objective.select_best_move(possible_moves)
 

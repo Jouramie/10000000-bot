@@ -12,6 +12,7 @@ opencv-python = "^4.5.5"
 Pillow = "^9.0.0"
 PyQt6 = "^6.2.2"
 pywin32 = "^303"
+frozendict = "^2.2.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^21.12b0"}
