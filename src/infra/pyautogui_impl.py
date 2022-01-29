@@ -1,15 +1,13 @@
 import logging
 from functools import reduce
-from typing import List
+from typing import List, Tuple
 
 import pyautogui
 import pyscreeze
 import win32gui
 
-from src.domain.game_state import GameState, GameStateDetector
-from src.domain.move import TileMover, Move
 from src.domain.objective import Objective, ObjectiveType, create_objective
-from src.domain.tile import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid
+from src.domain.tile import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid, Move
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -50,7 +48,7 @@ MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
 TESTING_WINDOW_TITLE = "while-combo.png - Greenshot image editor"
-GAME_WINDOW_TITLE = TESTING_WINDOW_TITLE
+GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
 
 
 def activate_window(title):
@@ -155,33 +153,29 @@ def find_objective() -> Objective:
     return sorted(objectives, key=lambda x: x.screen_square.left)[0]
 
 
-class PyAutoGuiGameStateDetector(GameStateDetector):
-    def __init__(self) -> None:
-        super().__init__()
+def detect_game_state() -> Tuple[Grid, Objective]:
+    grid = find_grid()
+    objective = find_objective()
+    logger.debug(f"Found {len(grid)} tiles.")
 
-    def detect_game_state(self) -> GameState:
-        game_state = GameState(grid=find_grid(), objective=find_objective())
-        logger.debug(f"Found {len(game_state.grid)} tiles.")
-
-        return game_state
+    return grid, objective
 
 
-class PyAutoGuiTileMover(TileMover):
-    def execute(self, move: Move):
-        logger.info(
-            f"Completing cluster {move.get_combo_type()} "
-            + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
-            + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
-            f"moving to ({move.grid_destination.x}, {move.grid_destination.y})"
-        )
+def move_tile(move: Move):
+    logger.info(
+        f"Completing cluster {move.get_combo_type()} "
+        + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
+        + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
+        f"moving to ({move.grid_destination.x}, {move.grid_destination.y})"
+    )
 
-        start_drag = move.tile_to_move.screen_square.find_center()
-        end_drag = move.calculate_screen_destination()
+    start_drag = move.tile_to_move.screen_square.find_center()
+    end_drag = move.calculate_screen_destination()
 
-        logger.debug(f"Starting drag from {start_drag}.")
-        pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
-        logger.debug(f"Ending drag to {end_drag}.")
-        pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_MOVEMENT_SPEED * start_drag.distance_between(end_drag))
+    logger.debug(f"Starting drag from {start_drag}.")
+    pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
+    logger.debug(f"Ending drag to {end_drag}.")
+    pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_MOVEMENT_SPEED * start_drag.distance_between(end_drag))
 
 
 if __name__ == "__main__":

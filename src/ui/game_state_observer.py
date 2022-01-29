@@ -4,7 +4,7 @@ from typing import Callable
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 
-from src.domain.game_state import GameState
+from src.domain.game_state import fetch_game_state
 from src.ui.model import GameStateModel, TileModel, to_model
 
 logger = logging.getLogger(__name__)
@@ -38,11 +38,9 @@ class GameStateObserverHandler(QObject):
 
     def __init__(
         self,
-        fetch_game_state: Callable[[], GameState],
         position_sanitizer: HighDPIPositionsSanitizer,
     ) -> None:
         super().__init__()
-        self.fetch_game_state = fetch_game_state
         self.position_sanitizer = position_sanitizer
 
     @pyqtSlot()
@@ -52,7 +50,7 @@ class GameStateObserverHandler(QObject):
             while True:
                 # TODO save gameState, only trigger update when it changed (only saving hash could be easier)
                 logger.debug("Fetching GameState.")
-                game_state = to_model(self.fetch_game_state())
+                game_state = to_model(fetch_game_state())
 
                 game_state = self.position_sanitizer.sanitize_game_state(game_state)
 
@@ -68,11 +66,10 @@ class GameStateObserverHandler(QObject):
 class GameStateObserver:
     def __init__(
         self,
-        fetch_game_state: Callable[[], GameState],
         game_state_changed_callback: Callable[[GameStateModel], None],
         display_ratio: float,
     ) -> None:
-        self.handler = GameStateObserverHandler(fetch_game_state, HighDPIPositionsSanitizer(display_ratio))
+        self.handler = GameStateObserverHandler(HighDPIPositionsSanitizer(display_ratio))
 
         self.thread = QThread()
 

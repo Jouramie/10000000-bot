@@ -124,6 +124,40 @@ class Cluster:
 
 
 @dataclass(frozen=True)
+class Move:
+    cluster: Cluster
+    tile_to_move: Tile
+    grid_destination: Point
+    # TODO impact
+
+    def get_combo_type(self) -> TileType:
+        return self.tile_to_move.type
+
+    def calculate_screen_destination(self) -> Point:
+        """
+        Should work with any size of cluster
+        """
+        any_pair = []
+        for tile in self.cluster.tiles:
+            any_pair.append(tile)
+            if len(any_pair) == 2:
+                break
+
+        tile_centers = any_pair[0].screen_square.find_center(), any_pair[1].screen_square.find_center()
+        pair_screen_distance = tile_centers[0].distance_between(tile_centers[1])
+        pair_grid_distance = any_pair[0].grid_position.distance_between(any_pair[1].grid_position)
+
+        unitary_distance = int(pair_screen_distance / pair_grid_distance)
+
+        first_tile_center = any_pair[0].screen_square.find_center() - any_pair[0].grid_position * unitary_distance
+
+        return first_tile_center + self.grid_destination * unitary_distance
+
+    def calculate_impact(self, tile_type: TileType) -> int:
+        return 3 if self.cluster.type == tile_type else 0
+
+
+@dataclass(frozen=True)
 class Grid(Sized, Iterable[Tile]):
     """
     8x7 56 tiles
@@ -186,6 +220,39 @@ class Grid(Sized, Iterable[Tile]):
             potential_cluster = frozenset(tile for tile in triple if tile.type == potential_type)
             if len(potential_cluster) == 2:
                 return Cluster(potential_type, potential_cluster)
+
+    def find_possible_moves(self) -> Set[Move]:
+        pairs = self.find_clusters()
+
+        logger.debug(f"Grid: {str(self)}")
+        if not pairs:
+            logger.warning("Found no clusters.")
+            return set()
+
+        movements = set()
+
+        for cluster in pairs:
+
+            completing_row_indices = cluster.find_completing_row_indices()
+            if completing_row_indices:
+                x = cluster.get_completed_line_index()
+                completing_cluster_rows = {missing_row_no: self.grid.get_row(missing_row_no) for missing_row_no in completing_row_indices}
+
+                matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
+                for y, matching_tile in matching_tiles:
+                    movements.add(Move(cluster, matching_tile, Point(x, y)))
+            else:
+                y = cluster.get_completed_line_index()
+                completing_column_indices = cluster.find_completing_column_indices()
+                completing_cluster_columns = {missing_column_no: self.grid.get_column(missing_column_no) for missing_column_no in completing_column_indices}
+
+                matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_columns.items() for tile in row if tile.type == cluster.type}
+                for x, matching_tile in matching_tiles:
+                    movements.add(Move(cluster, matching_tile, Point(x, y)))
+
+        logger.debug(f"Movements found {movements}")
+
+        return movements
 
 
 class InconsistentGrid(Grid):

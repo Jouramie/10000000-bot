@@ -1,11 +1,10 @@
-import abc
 import logging
 from dataclasses import dataclass
 from typing import Set
 
-from src.domain.move import Move
 from src.domain.objective import NoObjective, Objective
-from src.domain.tile import Grid, Point, InconsistentGrid
+from src.domain.tile import Grid, Point, InconsistentGrid, Move
+from src.infra.pyautogui_impl import detect_game_state
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -50,28 +49,18 @@ class GameState:
         return movements
 
 
-class GameStateDetector(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def detect_game_state(self) -> GameState:
-        raise NotImplementedError()
-
-
 game_state = GameState()
 
 
-class UpdateGameState:
-    def __init__(self, detector: GameStateDetector) -> None:
-        self.detector = detector
+def update_game_state() -> GameState:
+    global game_state
 
-    def execute(self) -> GameState:
-        global game_state
-        game_state = self.detector.detect_game_state()
+    game_state = GameState(*detect_game_state())
 
-        logger.info(f"GameState updated. {len(game_state.grid)} tiles. Objective: {game_state.objective.type}.")
-        return game_state
+    logger.info(f"GameState updated. {len(game_state.grid)} tiles. Objective: {game_state.objective.type}.")
+    return game_state
 
 
-class FetchGameState:
-    def execute(self) -> GameState:
-        global game_state
-        return game_state
+def fetch_game_state() -> GameState:
+    global game_state
+    return game_state
