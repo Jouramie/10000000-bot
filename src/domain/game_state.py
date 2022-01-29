@@ -1,9 +1,8 @@
 import logging
 from dataclasses import dataclass
-from typing import Set
 
 from src.domain.objective import NoObjective, Objective
-from src.domain.tile import Grid, Point, InconsistentGrid, Move
+from src.domain.tile import Grid, InconsistentGrid, Move
 from src.infra.pyautogui_impl import detect_game_state
 
 logger = logging.getLogger(__name__)
@@ -15,38 +14,16 @@ class GameState:
     grid: Grid = InconsistentGrid()
     objective: Objective = NoObjective()
 
-    def find_possible_moves(self) -> Set[Move]:
-        pairs = self.grid.find_clusters()
+    def select_best_move(self) -> Move | None:
+        possible_moves = self.grid.find_possible_moves()
 
-        logger.debug(f"Grid: {str(self.grid)}")
-        if not pairs:
-            logger.warning("Found no clusters.")
-            return set()
+        if not possible_moves:
+            logger.warning("No moves available.")
+            return None
 
-        movements = set()
+        logger.debug(f"Movements found {possible_moves}")
 
-        for cluster in pairs:
-
-            completing_row_indices = cluster.find_completing_row_indices()
-            if completing_row_indices:
-                x = cluster.get_completed_line_index()
-                completing_cluster_rows = {missing_row_no: self.grid.get_row(missing_row_no) for missing_row_no in completing_row_indices}
-
-                matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
-                for y, matching_tile in matching_tiles:
-                    movements.add(Move(cluster, matching_tile, Point(x, y)))
-            else:
-                y = cluster.get_completed_line_index()
-                completing_column_indices = cluster.find_completing_column_indices()
-                completing_cluster_columns = {missing_column_no: self.grid.get_column(missing_column_no) for missing_column_no in completing_column_indices}
-
-                matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_columns.items() for tile in row if tile.type == cluster.type}
-                for x, matching_tile in matching_tiles:
-                    movements.add(Move(cluster, matching_tile, Point(x, y)))
-
-        logger.debug(f"Movements found {movements}")
-
-        return movements
+        return self.objective.select_best_move(possible_moves)
 
 
 game_state = GameState()

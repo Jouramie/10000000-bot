@@ -47,8 +47,8 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "while-combo.png - Greenshot image editor"
-GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
+TESTING_WINDOW_TITLE = "cant-find-objective.png - Greenshot image editor"
+GAME_WINDOW_TITLE = TESTING_WINDOW_TITLE
 
 
 def activate_window(title):
@@ -149,7 +149,7 @@ def find_objective() -> Objective:
     if not objectives:
         return create_objective()
 
-    logger.info(f"Found objectives {objectives}.")
+    logger.debug(f"Found objectives {objectives}.")
     return sorted(objectives, key=lambda x: x.screen_square.left)[0]
 
 

@@ -224,9 +224,7 @@ class Grid(Sized, Iterable[Tile]):
     def find_possible_moves(self) -> Set[Move]:
         pairs = self.find_clusters()
 
-        logger.debug(f"Grid: {str(self)}")
         if not pairs:
-            logger.warning("Found no clusters.")
             return set()
 
         movements = set()
@@ -236,7 +234,7 @@ class Grid(Sized, Iterable[Tile]):
             completing_row_indices = cluster.find_completing_row_indices()
             if completing_row_indices:
                 x = cluster.get_completed_line_index()
-                completing_cluster_rows = {missing_row_no: self.grid.get_row(missing_row_no) for missing_row_no in completing_row_indices}
+                completing_cluster_rows = {missing_row_no: self.get_row(missing_row_no) for missing_row_no in completing_row_indices}
 
                 matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
                 for y, matching_tile in matching_tiles:
@@ -244,13 +242,11 @@ class Grid(Sized, Iterable[Tile]):
             else:
                 y = cluster.get_completed_line_index()
                 completing_column_indices = cluster.find_completing_column_indices()
-                completing_cluster_columns = {missing_column_no: self.grid.get_column(missing_column_no) for missing_column_no in completing_column_indices}
+                completing_cluster_columns = {missing_column_no: self.get_column(missing_column_no) for missing_column_no in completing_column_indices}
 
                 matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_columns.items() for tile in row if tile.type == cluster.type}
                 for x, matching_tile in matching_tiles:
                     movements.add(Move(cluster, matching_tile, Point(x, y)))
-
-        logger.debug(f"Movements found {movements}")
 
         return movements
 

@@ -20,14 +20,7 @@ def main_loop() -> None:
             logger.info("Updating game state.")
 
             game_state = update_game_state()
-            possible_moves = game_state.find_possible_moves()
-
-            if not possible_moves:
-                logger.warning("No moves available.")
-                continue
-
-            best_move = game_state.objective.select_best_move(possible_moves)
-
+            best_move = game_state.select_best_move()
             move_tile(best_move)
 
             # TODO find objective
