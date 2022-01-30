@@ -33,14 +33,14 @@ GENERIC_MONSTER_TILE_VALUES = {
 
 GENERIC_KEY_TILE_VALUES = {
     TileType.KEY: 3,
-    TileType.SHIELD: 1,
+    TileType.SHIELD: 2,
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
 }
 
 NO_OBJECTIVE_TILE_VALUES = {
-    TileType.SHIELD: 1,
+    TileType.SHIELD: 2,
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
