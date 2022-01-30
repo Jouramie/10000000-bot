@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # TODO backlog
+# Use STAR
 # Complete missing scan with remaining of last move
 # Use items
 # Adjust value per tile type per quest

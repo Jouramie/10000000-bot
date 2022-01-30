@@ -35,6 +35,8 @@ OBJETIVE_ASSETS = {
     ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier2.png",
     ObjectiveType.WHITE_DRAGON: "assets/objectives/white-dragon.png",
     ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
+    ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
+    ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
     ObjectiveType.DOOR: "assets/objectives/door.png",
 }
