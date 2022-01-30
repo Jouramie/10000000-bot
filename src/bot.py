@@ -8,9 +8,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # TODO backlog
-# Use STAR
-# Complete missing scan with remaining of last move
 # Use items
+# Use STAR
+# Apply gravity when there are hole in the grid (require to take a single screenshot
+# Complete missing scan with remaining of last move
 # Adjust value per tile type per quest
 # Lower shield value if max shield
 # Move with 5+ key should have less value than 4 but more than 3

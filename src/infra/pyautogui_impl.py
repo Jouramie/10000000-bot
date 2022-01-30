@@ -6,6 +6,7 @@ import pyautogui
 import pyscreeze
 import pywintypes
 import win32gui
+from PIL.Image import Image
 
 from src.domain.grid import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid, Move
 from src.domain.objective import Objective, ObjectiveType
@@ -28,7 +29,7 @@ TILE_ASSETS = {
 TILE_DIMENSION = 84
 
 OBJETIVE_ASSETS = {
-    ObjectiveType.ZOMBIE: "assets/objectives/zombie.png",
+    ObjectiveType.ZOMBIE: "assets/objectives/zombie2.png",
     ObjectiveType.SKELETON: "assets/objectives/skeleton.png",
     ObjectiveType.SKELETON_ARCHER: "assets/objectives/skeleton-archer.png",
     ObjectiveType.T_REX: "assets/objectives/t-rex.png",
@@ -69,7 +70,7 @@ def activate_window(title):
         logger.warning(e)
 
 
-def find_window_region(title):
+def find_window_region(title) -> pyscreeze.Box | None:
     # activate_window(title)
 
     possible_game_windows = [win.title for win in pyautogui.getWindowsWithTitle(title)]
@@ -81,32 +82,35 @@ def find_window_region(title):
     except pywintypes.error as e:
         return None
 
-    return win_region[0], win_region[1], win_region[2] - win_region[0], win_region[3] - win_region[1]
+    return pyscreeze.Box(win_region[0], win_region[1], win_region[2] - win_region[0], win_region[3] - win_region[1])
 
 
-# FIXME we should not take a screenshot for each tile type
-def locate_all_on_window(needle_image, window_title, **kwargs) -> List[pyscreeze.Box]:
+def screenshot_window(window_title: str) -> Tuple[pyscreeze.Box, Image] | None:
     region = find_window_region(window_title)
-    if region is None or region[0] < 0:
-        return []
-    window_screenshot = pyautogui.screenshot(region=region)
-    # window_screenshot.show()
+    if region is None or region.left < 0:
+        return None
 
     logger.debug(f"Game window located at {region}.")
+    screenshot = pyautogui.screenshot(region=region)
+    # screenshot.show()
+    return region, screenshot
+
+
+def locate_all_on_window(needle_image, region: pyscreeze.Box, screenshot: Image, **kwargs) -> List[pyscreeze.Box]:
     return [
-        pyscreeze.Box(box.left + region[0], box.top + region[1], box.width, box.height)
-        for box in pyautogui.locateAll(needle_image, window_screenshot, **kwargs)
+        pyscreeze.Box(box.left + region.left, box.top + region.top, box.width, box.height) for box in pyautogui.locateAll(needle_image, screenshot, **kwargs)
     ]
 
 
 def find_grid() -> Grid:
     """Should detect 8x7 56 tiles."""
+    region, screenshot = screenshot_window(GAME_WINDOW_TITLE)
 
     # TODO lower confidence and undupe images
     prospect_tiles = [
         (tile_type, ScreenSquare(tile.left, tile.top, tile.height, tile.width))
         for tile_type, asset in TILE_ASSETS.items()
-        for tile in locate_all_on_window(asset, GAME_WINDOW_TITLE, grayscale=True)
+        for tile in locate_all_on_window(asset, region, screenshot, grayscale=True)
     ]
 
     if not prospect_tiles:
@@ -146,10 +150,12 @@ def find_grid() -> Grid:
 
 
 def find_objective() -> Objective:
+    region, screenshot = screenshot_window(GAME_WINDOW_TITLE)
+
     objectives = [
         Objective(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
         for objective_assets, asset in OBJETIVE_ASSETS.items()
-        for square in locate_all_on_window(asset, GAME_WINDOW_TITLE, grayscale=True, confidence=0.85)
+        for square in locate_all_on_window(asset, region, screenshot, grayscale=True, confidence=0.85)
     ]
 
     if not objectives:
