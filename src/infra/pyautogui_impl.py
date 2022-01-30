@@ -4,10 +4,11 @@ from typing import List, Tuple
 
 import pyautogui
 import pyscreeze
+import pywintypes
 import win32gui
 
 from src.domain.grid import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid, Move
-from src.domain.objective import Objective, ObjectiveType, create_objective
+from src.domain.objective import Objective, ObjectiveType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,8 +48,8 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "cant-find-objective.png - Greenshot image editor"
-GAME_WINDOW_TITLE = TESTING_WINDOW_TITLE
+TESTING_WINDOW_TITLE = "star-7-2.png - Greenshot image editor"
+GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
 
 
 def activate_window(title):
@@ -73,7 +74,10 @@ def find_window_region(title):
     logger.debug(f"Found {len(possible_game_windows)} possible game windows: {possible_game_windows}.")
 
     window_handle = win32gui.FindWindow(None, title)
-    win_region = win32gui.GetWindowRect(window_handle)
+    try:
+        win_region = win32gui.GetWindowRect(window_handle)
+    except pywintypes.error as e:
+        return None
 
     return win_region[0], win_region[1], win_region[2] - win_region[0], win_region[3] - win_region[1]
 
@@ -81,7 +85,7 @@ def find_window_region(title):
 # FIXME we should not take a screenshot for each tile type
 def locate_all_on_window(needle_image, window_title, **kwargs) -> List[pyscreeze.Box]:
     region = find_window_region(window_title)
-    if region[0] < 0:
+    if region is None or region[0] < 0:
         return []
     window_screenshot = pyautogui.screenshot(region=region)
     # window_screenshot.show()
@@ -141,13 +145,13 @@ def find_grid() -> Grid:
 
 def find_objective() -> Objective:
     objectives = [
-        create_objective(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
+        Objective(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
         for objective_assets, asset in OBJETIVE_ASSETS.items()
         for square in locate_all_on_window(asset, GAME_WINDOW_TITLE, grayscale=True, confidence=0.85)
     ]
 
     if not objectives:
-        return create_objective()
+        return Objective()
 
     logger.debug(f"Found objectives {objectives}.")
     return sorted(objectives, key=lambda x: x.screen_square.left)[0]

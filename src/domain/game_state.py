@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 
 from src.domain.grid import Grid, InconsistentGrid, Move
-from src.domain.objective import NoObjective, Objective
+from src.domain.objective import Objective
 from src.infra.pyautogui_impl import detect_game_state
 
 logger = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ logger.setLevel(logging.INFO)
 @dataclass
 class GameState:
     grid: Grid = InconsistentGrid()
-    objective: Objective = NoObjective()
+    objective: Objective = Objective()
 
     def select_best_move(self) -> Move | None:
         possible_moves = self.grid.find_possible_moves()

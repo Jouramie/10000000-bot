@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import reduce
 from math import sqrt
 from typing import List, Set, Tuple, Sized, Iterable, FrozenSet, Dict
 
@@ -167,7 +168,14 @@ class Move:
         return first_tile_center + self.grid_destination * unitary_distance
 
     def calculate_impact(self, tile_type: TileType) -> int:
-        return self.impact[tile_type] if tile_type in self.impact else 0
+        return self.impact.get(tile_type, 0)
+
+    def calculate_value(self, value_per_tile_type: Dict[TileType, int]) -> int:
+        return reduce(
+            lambda x, y: x + y,
+            [self.impact[tile_type] * value_per_tile_type.get(tile_type, 0) for tile_type in self.impact],
+            0,
+        )
 
 
 @dataclass(frozen=True)

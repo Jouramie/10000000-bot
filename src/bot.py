@@ -7,10 +7,12 @@ from src.infra.pyautogui_impl import move_tile
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# TODO
-# 1. Fill the grid with unknown tiles
-# 2. Calculate combo effects with visible tiles
-# 3. Complete missing scan with remaining of last move
+# TODO backlog
+# Complete missing scan with remaining of last move
+# Use items
+# Adjust value per tile type per quest
+# Lower shield value if max shield
+# Move with 5+ key should have less value than 4 but more than 3
 
 
 def main_loop() -> None:
@@ -21,9 +23,9 @@ def main_loop() -> None:
 
             game_state = update_game_state()
             best_move = game_state.select_best_move()
-            move_tile(best_move)
 
-            # TODO find objective
+            if best_move is not None:
+                move_tile(best_move)
 
             sleep(0.1)
     except Exception as e:

@@ -1,7 +1,6 @@
-import abc
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, Callable, Set, List, Tuple
+from typing import Callable, Set, List, Tuple
 
 from src.domain.grid import ScreenSquare, TileType, Move
 
@@ -21,6 +20,46 @@ class ObjectiveType(Enum):
         return self.name
 
 
+GENERIC_MONSTER_TILE_VALUES = {
+    TileType.SWORD: 3,
+    TileType.WAND: 3,
+    TileType.SHIELD: 2,
+    TileType.LOGS: 1,
+    TileType.CHEST: 1,
+    TileType.ROCKS: 1,
+}
+
+GENERIC_KEY_TILE_VALUES = {
+    TileType.KEY: 3,
+    TileType.SHIELD: 1,
+    TileType.LOGS: 1,
+    TileType.CHEST: 1,
+    TileType.ROCKS: 1,
+}
+
+NO_OBJECTIVE_TILE_VALUES = {
+    TileType.SHIELD: 1,
+    TileType.LOGS: 1,
+    TileType.CHEST: 1,
+    TileType.ROCKS: 1,
+    TileType.SWORD: -2,
+    TileType.WAND: -2,
+    TileType.KEY: -2,
+}
+
+TILE_VALUES_PER_OBJECTIVE_TYPES = {
+    ObjectiveType.ZOMBIE: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.SKELETON: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.SKELETON_ARCHER: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.T_REX: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.FALLEN_SOLDIER: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.WHITE_DRAGON: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.FIRE_ELEMENTAL: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
+    ObjectiveType.DOOR: GENERIC_KEY_TILE_VALUES,
+}
+
+
 def _move_comparator(prioritized_tiles: List[TileType]) -> Callable[[Move], Tuple[int, ...]]:
     return lambda move: tuple(move.calculate_impact(tile_type) for tile_type in prioritized_tiles)
 
@@ -35,45 +74,12 @@ def select_best_move(prioritized_tiles: List[TileType], possible_moves: Set[Move
 
 
 @dataclass(frozen=True)
-class Objective(metaclass=abc.ABCMeta):
+class Objective:
     type: ObjectiveType = None
     screen_square: ScreenSquare = ScreenSquare()
 
-    @abc.abstractmethod
-    def select_best_move(self, possible_moves: Set[Move]):
-        raise NotImplementedError()
+    def select_best_move(self, possible_moves: Set[Move]) -> Move | None:
+        value_per_tile_type = TILE_VALUES_PER_OBJECTIVE_TYPES.get(self.type, NO_OBJECTIVE_TILE_VALUES)
 
-
-class MonsterObjective(Objective):
-    def select_best_move(self, possible_moves: Set[Move]):
-        return select_best_move([TileType.SWORD, TileType.WAND, TileType.LOGS, TileType.SHIELD, TileType.CHEST, TileType.ROCKS], possible_moves)
-
-
-class KeyObjective(Objective):
-    def select_best_move(self, possible_moves: Set[Move]):
-        return select_best_move([TileType.KEY, TileType.LOGS, TileType.SHIELD, TileType.CHEST, TileType.ROCKS], possible_moves)
-
-
-class NoObjective(Objective):
-    def select_best_move(self, possible_moves: Set[Move]):
-        return select_best_move([TileType.LOGS, TileType.SHIELD, TileType.CHEST, TileType.ROCKS], possible_moves)
-
-
-OBJECTIVE_CLASS_PER_TYPE: Dict[ObjectiveType, Callable[[ObjectiveType, ScreenSquare], Objective]] = {
-    ObjectiveType.ZOMBIE: MonsterObjective,
-    ObjectiveType.SKELETON: MonsterObjective,
-    ObjectiveType.SKELETON_ARCHER: MonsterObjective,
-    ObjectiveType.T_REX: MonsterObjective,
-    ObjectiveType.FALLEN_SOLDIER: MonsterObjective,
-    ObjectiveType.WHITE_DRAGON: MonsterObjective,
-    ObjectiveType.FIRE_ELEMENTAL: MonsterObjective,
-    ObjectiveType.CHEST: KeyObjective,
-    ObjectiveType.DOOR: KeyObjective,
-}
-
-
-def create_objective(objective_type: ObjectiveType = None, screen_position: ScreenSquare = ScreenSquare()) -> Objective:
-    clazz = OBJECTIVE_CLASS_PER_TYPE.get(objective_type)
-    if clazz is None:
-        return NoObjective()
-    return clazz(objective_type, screen_position)
+        best_move = max(possible_moves, key=lambda x: x.calculate_value(value_per_tile_type))
+        return best_move if best_move.calculate_value(value_per_tile_type) > 0 else None
