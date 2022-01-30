@@ -167,7 +167,7 @@ class Move:
         return first_tile_center + self.grid_destination * unitary_distance
 
     def calculate_impact(self, tile_type: TileType) -> int:
-        return 3 if self.cluster.type == tile_type else 0
+        return self.impact[tile_type] if tile_type in self.impact else 0
 
 
 @dataclass(frozen=True)

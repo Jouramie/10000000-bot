@@ -6,7 +6,7 @@ from src.domain.objective import NoObjective, Objective
 from src.infra.pyautogui_impl import detect_game_state
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 @dataclass

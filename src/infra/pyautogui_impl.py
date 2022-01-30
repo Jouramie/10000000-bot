@@ -166,7 +166,7 @@ def move_tile(move: Move):
         f"Completing cluster {move.get_combo_type()} "
         + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
         + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
-        f"moving to ({move.grid_destination.x}, {move.grid_destination.y})"
+        f"moving to ({move.grid_destination.x}, {move.grid_destination.y}) for expected impact " + str(dict(move.impact))
     )
 
     start_drag = move.tile_to_move.screen_square.find_center()
