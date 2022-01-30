@@ -1,7 +1,9 @@
 from typing import List
 from unittest import TestCase
 
-from src.domain.grid import Point, Grid, TileType, Tile
+from src.domain.grid import Grid
+from src.domain.screen import Point
+from src.domain.tile import TileType, Tile
 
 
 def _a_grid(tile_types: List[TileType], size: Point):

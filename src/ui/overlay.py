@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont
 from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QGraphicsDropShadowEffect
 
-from src.domain.grid import TileType
+from src.domain.tile import TileType
 from src.ui.model import GameStateModel
 
 logger = logging.getLogger(__name__)

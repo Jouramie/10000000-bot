@@ -1,8 +1,14 @@
+import abc
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Callable, Set, List, Tuple
+from functools import reduce
+from typing import Set, Dict, List, Tuple
 
-from src.domain.grid import ScreenSquare, TileType, Move
+from frozendict import FrozenOrderedDict, frozendict
+
+from src.domain.item import Item, ItemType
+from src.domain.screen import ScreenSquare, Point
+from src.domain.tile import TileType, Tile, Cluster
 
 
 class ObjectiveType(Enum):
@@ -15,8 +21,11 @@ class ObjectiveType(Enum):
     FIRE_ELEMENTAL = auto()
     WATER_ELEMENTAL = auto()
     RED_DRAGON = auto()
+    GOLEM = auto()
+    NINJA = auto()
     CHEST = auto()
     DOOR = auto()
+    # DOOR2 = auto()
 
     def __str__(self):
         return self.name
@@ -29,6 +38,7 @@ GENERIC_MONSTER_TILE_VALUES = {
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
+    TileType.KEY: -1,
 }
 
 GENERIC_KEY_TILE_VALUES = {
@@ -37,6 +47,8 @@ GENERIC_KEY_TILE_VALUES = {
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
+    TileType.SWORD: -1,
+    TileType.WAND: -1,
 }
 
 NO_OBJECTIVE_TILE_VALUES = {
@@ -59,22 +71,114 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
     ObjectiveType.FIRE_ELEMENTAL: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.WATER_ELEMENTAL: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.RED_DRAGON: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.GOLEM: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.NINJA: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
     ObjectiveType.DOOR: GENERIC_KEY_TILE_VALUES,
 }
 
+ITEM_FLAT_IMPACT = {
+    ItemType.KEY: frozendict(
+        {
+            TileType.KEY: 6,
+        }
+    ),
+    ItemType.AXE: frozendict(
+        {
+            TileType.SWORD: 10,
+        }
+    ),
+    ItemType.RED_ORB: frozendict(
+        {
+            TileType.WAND: 10,
+        }
+    ),
+    ItemType.YELLOW_ORB: frozendict(
+        {
+            TileType.WAND: 10,
+        }
+    ),
+    ItemType.BREAD: frozendict(
+        {
+            TileType.SHIELD: 10,
+        }
+    ),
+    ItemType.CHEESE: frozendict(
+        {
+            TileType.SHIELD: 10,
+        }
+    ),
+}
 
-def _move_comparator(prioritized_tiles: List[TileType]) -> Callable[[Move], Tuple[int, ...]]:
-    return lambda move: tuple(move.calculate_impact(tile_type) for tile_type in prioritized_tiles)
+
+@dataclass(frozen=True)
+class Move(metaclass=abc.ABCMeta):
+    impact: FrozenOrderedDict[TileType, int]
+
+    @abc.abstractmethod
+    def calculate_mouse_movement(self) -> List[Point]:
+        raise NotImplementedError
+
+    def calculate_score(self, value_per_tile_type: Dict[TileType, int]) -> int:
+        return reduce(
+            lambda x, y: x + y,
+            [self.impact[tile_type] * value_per_tile_type.get(tile_type, 0) for tile_type in self.impact],
+            0,
+        )
 
 
-def select_best_move(prioritized_tiles: List[TileType], possible_moves: Set[Move]):
-    ordered_moves = sorted(
-        [move for move in possible_moves],
-        key=_move_comparator(prioritized_tiles),
-        reverse=True,
-    )
-    return ordered_moves[0]
+@dataclass(frozen=True)
+class TileMove(Move):
+    cluster: Cluster
+    tile_to_move: Tile
+    grid_destination: Point
+
+    def __str__(self):
+        return f"move {str(self.tile_to_move)} -> {str(self.grid_destination)} for { {str(tile_type):impact for tile_type, impact in self.impact.items()}}"
+
+    def get_combo_type(self) -> TileType:
+        return self.tile_to_move.type
+
+    def calculate_screen_destination(self) -> Point:
+        """
+        Should work with any size of cluster
+        """
+        any_pair = []
+        for tile in self.cluster.tiles:
+            any_pair.append(tile)
+            if len(any_pair) == 2:
+                break
+
+        tile_centers = any_pair[0].screen_square.find_center(), any_pair[1].screen_square.find_center()
+        pair_screen_distance = tile_centers[0].distance_between(tile_centers[1])
+        pair_grid_distance = any_pair[0].grid_position.distance_between(any_pair[1].grid_position)
+
+        unitary_distance = int(pair_screen_distance / pair_grid_distance)
+
+        first_tile_center = any_pair[0].screen_square.find_center() - any_pair[0].grid_position * unitary_distance
+
+        return first_tile_center + self.grid_destination * unitary_distance
+
+    def calculate_mouse_movement(self) -> List[Point]:
+        return [self.tile_to_move.screen_square.find_center(), self.calculate_screen_destination()]
+
+
+@dataclass(frozen=True)
+class ItemMove(Move):
+    item: Item
+
+    def __str__(self):
+        return f"use {str(self.item)}"
+
+    def calculate_mouse_movement(self) -> List[Point]:
+        return [self.item.screen_square.find_center()]
+
+    def calculate_score(self, value_per_tile_type: Dict[TileType, int]) -> int:
+        return super(ItemMove, self).calculate_score(value_per_tile_type)
+
+
+def create_item_move(item: Item, impact: FrozenOrderedDict[TileType, int] | None = None) -> ItemMove:
+    return ItemMove(impact if impact is not None else ITEM_FLAT_IMPACT.get(item.type, frozendict()), item)
 
 
 @dataclass(frozen=True)
@@ -82,8 +186,13 @@ class Objective:
     type: ObjectiveType = None
     screen_square: ScreenSquare = ScreenSquare()
 
-    def select_best_move(self, possible_moves: Set[Move]) -> Move | None:
+    def select_best_move(self, possible_moves: Set[TileMove]) -> Tuple[TileMove, int] | None:
         value_per_tile_type = TILE_VALUES_PER_OBJECTIVE_TYPES.get(self.type, NO_OBJECTIVE_TILE_VALUES)
 
-        best_move = max(possible_moves, key=lambda x: x.calculate_value(value_per_tile_type))
-        return best_move if best_move.calculate_value(value_per_tile_type) > 0 else None
+        best_move = max(possible_moves, key=lambda x: x.calculate_score(value_per_tile_type))
+        score = best_move.calculate_score(value_per_tile_type)
+
+        if score <= 0:
+            return None
+
+        return best_move, score if score > 0 else None

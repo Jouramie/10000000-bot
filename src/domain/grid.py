@@ -1,181 +1,11 @@
 from dataclasses import dataclass
-from enum import Enum, auto
-from functools import reduce
-from math import sqrt
-from typing import List, Set, Tuple, Sized, Iterable, FrozenSet, Dict
+from typing import List, Set, Tuple, Sized, Iterable, Dict
 
-from frozendict import frozendict, FrozenOrderedDict
+from frozendict import frozendict
 
-
-class TileType(Enum):
-    CHEST = auto()
-    KEY = auto()
-    LOGS = auto()
-    ROCKS = auto()
-    SHIELD = auto()
-    SWORD = auto()
-    WAND = auto()
-    STAR = auto()
-    UNKNOWN = auto()
-
-    def __str__(self):
-        return self.name
-
-
-@dataclass(frozen=True)
-class Point:
-    x: int
-    y: int
-
-    def __lt__(self, other) -> bool:
-        return (self.y, self.x) < (other.y, other.x)
-
-    def __mul__(self, other):
-        if isinstance(other, int):
-            return Point(self.x * other, self.y * other)
-        raise NotImplementedError()
-
-    def __add__(self, other):
-        if type(self) is type(other):
-            return Point(self.x + other.x, self.y + other.y)
-        raise NotImplementedError()
-
-    def __sub__(self, other):
-        if type(self) is type(other):
-            return Point(self.x - other.x, self.y - other.y)
-        raise NotImplementedError()
-
-    def __str__(self):
-        return str((self.x, self.y))
-
-    def distance_between(self, other) -> int:
-        return int(sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2))
-
-
-@dataclass(frozen=True)
-class ScreenSquare:
-    left: int = 0
-    top: int = 0
-    height: int = 0
-    width: int = 0
-
-    def __lt__(self, other) -> bool:
-        return (self.top, self.left) < (other.top, other.left)
-
-    def find_center(self) -> Point:
-        return Point(self.left + int(self.width / 2), self.top + int(self.height / 2))
-
-
-@dataclass(frozen=True)
-class Tile:
-    type: TileType
-    screen_square: ScreenSquare | None
-    grid_position: Point
-
-    def has_type(self, tile_type: TileType) -> bool:
-        return self.type == tile_type
-
-    def __str__(self):
-        return f"{{{str(self.type)} {str(self.grid_position)}}}"
-
-
-# TODO use stars in combo
-
-
-@dataclass(frozen=True)
-class Cluster(Sized, Iterable[Tile]):
-    # FIXME this field is convenient but not necessary
-    type: TileType
-    tiles: FrozenSet[Tile]
-
-    def __iter__(self):
-        return iter(self.tiles)
-
-    def __len__(self) -> int:
-        return len(self.tiles)
-
-    def get_completed_line_index(self):
-        present_indices_in_line = self._find_present_indices_in_row()
-
-        if len(present_indices_in_line) == 1:
-            return present_indices_in_line.pop()
-
-        # Get any element from the set
-        for tile in self.tiles:
-            return tile.grid_position.x
-
-    def _find_present_indices_in_row(self) -> set[int]:
-        return {tile.grid_position.y for tile in self}
-
-    def _find_present_indices_in_column(self) -> set[int]:
-        return {tile.grid_position.x for tile in self}
-
-    def find_completing_row_indices(self) -> Set[int]:
-        return Cluster._find_completing_indices_in_line(self._find_present_indices_in_row())
-
-    def find_completing_column_indices(self) -> Set[int]:
-        return Cluster._find_completing_indices_in_line(self._find_present_indices_in_column())
-
-    @staticmethod
-    def _find_completing_indices_in_line(present_index_in_line: {Set[int]}) -> Set[int]:
-        if len(present_index_in_line) == 1:
-            return set()
-
-        min_present_tile = min(present_index_in_line)
-        max_present_tile = max(present_index_in_line)
-
-        if min_present_tile + 1 == max_present_tile:
-            return {min_present_tile - 1, max_present_tile + 1}
-
-        for i in range(min_present_tile, max_present_tile):
-            if i not in present_index_in_line:
-                return {i}
-
-
-@dataclass(frozen=True)
-class Move:
-    cluster: Cluster
-    tile_to_move: Tile
-    grid_destination: Point
-    impact: FrozenOrderedDict[TileType, int]
-
-    def __str__(self):
-        return (
-            f"{{Move {str(self.tile_to_move)} -> {str(self.grid_destination)} " f"for { {str(tile_type):impact for tile_type, impact in self.impact.items()}}}}"
-        )
-
-    def get_combo_type(self) -> TileType:
-        return self.tile_to_move.type
-
-    def calculate_screen_destination(self) -> Point:
-        """
-        Should work with any size of cluster
-        """
-        any_pair = []
-        for tile in self.cluster.tiles:
-            any_pair.append(tile)
-            if len(any_pair) == 2:
-                break
-
-        tile_centers = any_pair[0].screen_square.find_center(), any_pair[1].screen_square.find_center()
-        pair_screen_distance = tile_centers[0].distance_between(tile_centers[1])
-        pair_grid_distance = any_pair[0].grid_position.distance_between(any_pair[1].grid_position)
-
-        unitary_distance = int(pair_screen_distance / pair_grid_distance)
-
-        first_tile_center = any_pair[0].screen_square.find_center() - any_pair[0].grid_position * unitary_distance
-
-        return first_tile_center + self.grid_destination * unitary_distance
-
-    def calculate_impact(self, tile_type: TileType) -> int:
-        return self.impact.get(tile_type, 0)
-
-    def calculate_value(self, value_per_tile_type: Dict[TileType, int]) -> int:
-        return reduce(
-            lambda x, y: x + y,
-            [self.impact[tile_type] * value_per_tile_type.get(tile_type, 0) for tile_type in self.impact],
-            0,
-        )
+from src.domain.objective import TileMove
+from src.domain.screen import Point
+from src.domain.tile import TileType, Tile, Cluster
 
 
 @dataclass(frozen=True)
@@ -249,7 +79,7 @@ class Grid(Sized, Iterable[Tile]):
             if len(potential_cluster) == 2:
                 return Cluster(potential_type, potential_cluster)
 
-    def find_possible_moves(self) -> Set[Move]:
+    def find_possible_moves(self) -> Set[TileMove]:
         pairs = self.find_clusters()
 
         if not pairs:
@@ -267,7 +97,7 @@ class Grid(Sized, Iterable[Tile]):
                 matching_tiles = {(row_index, tile) for row_index, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
                 for y, matching_tile in matching_tiles:
                     destination = Point(x, y)
-                    movements.add(Move(cluster, matching_tile, destination, self.simulate_line_shift(matching_tile.grid_position, destination)))
+                    movements.add(TileMove(self.simulate_line_shift(matching_tile.grid_position, destination), cluster, matching_tile, destination))
             else:
                 y = cluster.get_completed_line_index()
                 completing_column_indices = cluster.find_completing_column_indices()
@@ -276,7 +106,7 @@ class Grid(Sized, Iterable[Tile]):
                 matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_columns.items() for tile in row if tile.type == cluster.type}
                 for x, matching_tile in matching_tiles:
                     destination = Point(x, y)
-                    movements.add(Move(cluster, matching_tile, destination, self.simulate_line_shift(matching_tile.grid_position, destination)))
+                    movements.add(TileMove(self.simulate_line_shift(matching_tile.grid_position, destination), cluster, matching_tile, destination))
 
         return movements
 

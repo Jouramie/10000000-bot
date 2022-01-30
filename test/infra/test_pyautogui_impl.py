@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from PIL import Image
 
-from src.domain.grid import TileType
+from src.domain.tile import TileType
 from src.infra.pyautogui_impl import find_grid
 
 easy_grid = Image.open("test/infra/easy-grid.png")

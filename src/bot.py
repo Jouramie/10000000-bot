@@ -2,7 +2,7 @@ import logging
 from time import sleep
 
 from src.domain.game_state import update_game_state
-from src.infra.pyautogui_impl import move_tile
+from src.infra.pyautogui_impl import do_move
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -27,7 +27,7 @@ def main_loop() -> None:
             best_move = game_state.select_best_move()
 
             if best_move is not None:
-                move_tile(best_move)
+                do_move(best_move)
 
             sleep(0.1)
     except Exception as e:

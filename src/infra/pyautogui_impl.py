@@ -1,6 +1,6 @@
 import logging
 from functools import reduce
-from typing import List, Tuple
+from typing import List, Tuple, FrozenSet
 
 import pyautogui
 import pyscreeze
@@ -8,8 +8,11 @@ import pywintypes
 import win32gui
 from PIL.Image import Image
 
-from src.domain.grid import TileType, Tile, ScreenSquare, Point, Grid, InconsistentGrid, Move
-from src.domain.objective import Objective, ObjectiveType
+from src.domain.grid import Grid, InconsistentGrid
+from src.domain.item import Item, ItemType
+from src.domain.objective import Objective, ObjectiveType, Move, TileMove, ItemMove
+from src.domain.screen import ScreenSquare, Point
+from src.domain.tile import TileType, Tile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -38,8 +41,21 @@ OBJETIVE_ASSETS = {
     ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
     ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
     ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
+    ObjectiveType.GOLEM: "assets/objectives/golem.png",
+    ObjectiveType.NINJA: "assets/objectives/ninja2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
-    ObjectiveType.DOOR: "assets/objectives/door.png",
+    ObjectiveType.DOOR: "assets/objectives/door2.png",
+}
+
+ITEM_ASSETS = {
+    ItemType.LOG_TO_KEY_SCROLL: "assets/items/log-to-key-scroll.png",
+    ItemType.LOG_TO_WAND_SCROLL: "assets/items/log-to-wand-scroll.png",
+    ItemType.KEY: "assets/items/key.png",
+    ItemType.AXE: "assets/items/axe.png",
+    ItemType.BREAD: "assets/items/bread.png",
+    ItemType.CHEESE: "assets/items/bread.png",
+    ItemType.RED_ORB: "assets/items/red-orb.png",
+    ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
 }
 
 
@@ -51,8 +67,8 @@ GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "star-7-2.png - Greenshot image editor"
-GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
+TESTING_WINDOW_TITLE = "ninja-mid-combo.png - Greenshot image editor"
+GAME_WINDOW_TITLE = TESTING_WINDOW_TITLE
 
 
 def activate_window(title):
@@ -104,7 +120,12 @@ def locate_all_on_window(needle_image, region: pyscreeze.Box, screenshot: Image,
 
 def find_grid() -> Grid:
     """Should detect 8x7 56 tiles."""
-    region, screenshot = screenshot_window(GAME_WINDOW_TITLE)
+    packed_screenshot = screenshot_window(GAME_WINDOW_TITLE)
+
+    if packed_screenshot is None:
+        return InconsistentGrid([], GRID_SIZE)
+
+    region, screenshot = packed_screenshot
 
     # TODO lower confidence and undupe images
     prospect_tiles = [
@@ -165,29 +186,49 @@ def find_objective() -> Objective:
     return sorted(objectives, key=lambda x: x.screen_square.left)[0]
 
 
-def detect_game_state() -> Tuple[Grid, Objective]:
-    grid = find_grid()
-    objective = find_objective()
-    logger.debug(f"Found {len(grid)} tiles.")
+def find_items() -> FrozenSet[Item]:
+    region, screenshot = screenshot_window(GAME_WINDOW_TITLE)
 
-    return grid, objective
+    items = {
+        Item(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
+        for objective_assets, asset in ITEM_ASSETS.items()
+        for square in locate_all_on_window(asset, region, screenshot, grayscale=True)
+    }
+
+    logger.info(f"Found items {items}.")
+    return frozenset(items)
 
 
-def move_tile(move: Move):
-    logger.info(
-        f"Completing cluster {move.get_combo_type()} "
-        + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
-        + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
-        f"moving to ({move.grid_destination.x}, {move.grid_destination.y}) for expected impact " + str(dict(move.impact))
-    )
+def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
+    return find_grid(), find_objective(), find_items()
 
-    start_drag = move.tile_to_move.screen_square.find_center()
-    end_drag = move.calculate_screen_destination()
 
-    logger.debug(f"Starting drag from {start_drag}.")
-    pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
-    logger.debug(f"Ending drag to {end_drag}.")
-    pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_MOVEMENT_SPEED * start_drag.distance_between(end_drag))
+def do_move(move: Move):
+    if isinstance(move, TileMove):
+        logger.info(
+            f"Completing cluster {move.get_combo_type()} "
+            + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
+            + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
+            f"moving to ({move.grid_destination.x}, {move.grid_destination.y}) for expected impact " + str(dict(move.impact))
+        )
+    elif isinstance(move, ItemMove):
+        logger.info(f"Using item {move.item.type}.")
+
+    mouse_movement = move.calculate_mouse_movement()
+
+    if len(mouse_movement) == 2:
+        start_drag = mouse_movement[0]
+        end_drag = mouse_movement[1]
+
+        logger.debug(f"Starting drag from {start_drag}.")
+        pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
+        logger.debug(f"Ending drag to {end_drag}.")
+        pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_MOVEMENT_SPEED * start_drag.distance_between(end_drag))
+
+    else:
+        click_point = move.item.screen_square.find_center()
+
+        pyautogui.click(click_point.x, click_point.y)
 
 
 if __name__ == "__main__":

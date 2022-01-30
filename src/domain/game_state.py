@@ -1,8 +1,10 @@
 import logging
 from dataclasses import dataclass
+from typing import Set
 
-from src.domain.grid import Grid, InconsistentGrid, Move
-from src.domain.objective import Objective
+from src.domain.grid import Grid, InconsistentGrid
+from src.domain.item import Item
+from src.domain.objective import Objective, TileMove, create_item_move
 from src.infra.pyautogui_impl import detect_game_state
 
 logger = logging.getLogger(__name__)
@@ -13,9 +15,10 @@ logger.setLevel(logging.INFO)
 class GameState:
     grid: Grid = InconsistentGrid()
     objective: Objective = Objective()
+    items: Set[Item] = frozenset()
 
-    def select_best_move(self) -> Move | None:
-        possible_moves = self.grid.find_possible_moves()
+    def select_best_move(self) -> TileMove | None:
+        possible_moves = self.grid.find_possible_moves() | {create_item_move(item) for item in self.items}
 
         if not possible_moves:
             logger.warning("No moves available.")
@@ -27,7 +30,13 @@ class GameState:
 
         logger.debug(f"Evaluating moves {str_moves[:-1]}")
 
-        return self.objective.select_best_move(possible_moves)
+        packed_move = self.objective.select_best_move(possible_moves)
+        if packed_move is None:
+            return None
+
+        best_move, score = packed_move
+        logger.info(f"Best move is {str(best_move)} with score {score}.")
+        return best_move
 
 
 game_state = GameState()
