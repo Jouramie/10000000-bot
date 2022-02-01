@@ -97,7 +97,7 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
     ObjectiveType.RED_DRAGON: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.GOLEM: SWORD_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.NINJA: WAND_RESISTANT_MONSTER_TILE_VALUES,
-    ObjectiveType.REPTILIAN: SWORD_RESISTANT_MONSTER_TILE_VALUES,
+    ObjectiveType.REPTILIAN: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.TREANT: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.DEMON: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
@@ -105,6 +105,36 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
 }
 
 ITEM_FLAT_IMPACT = {
+    ItemType.LOG_TO_KEY_SCROLL: frozendict(
+        {
+            TileType.KEY: 10,
+        }
+    ),
+    ItemType.LOG_TO_SWORD_SCROLL: frozendict(
+        {
+            TileType.SWORD: 10,
+        }
+    ),
+    ItemType.LOG_TO_WAND_SCROLL: frozendict(
+        {
+            TileType.WAND: 10,
+        }
+    ),
+    ItemType.ROCK_TO_KEY_SCROLL: frozendict(
+        {
+            TileType.KEY: 10,
+        }
+    ),
+    ItemType.ROCK_TO_SWORD_SCROLL: frozendict(
+        {
+            TileType.SWORD: 10,
+        }
+    ),
+    ItemType.ROCK_TO_WAND_SCROLL: frozendict(
+        {
+            TileType.WAND: 10,
+        }
+    ),
     ItemType.KEY: frozendict(
         {
             TileType.KEY: 6,

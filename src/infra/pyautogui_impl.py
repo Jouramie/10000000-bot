@@ -60,6 +60,7 @@ ITEM_ASSETS = {
     ItemType.LOG_TO_WAND_SCROLL: "assets/items/log-to-wand-scroll.png",
     ItemType.LOG_TO_SWORD_SCROLL: "assets/items/log-to-sword-scroll.png",
     ItemType.ROCK_TO_KEY_SCROLL: "assets/items/rock-to-key-scroll.png",
+    ItemType.ROCK_TO_WAND_SCROLL: "assets/items/rock-to-wand-scroll.png",
     ItemType.KEY: "assets/items/key.png",
     ItemType.AXE: "assets/items/axe.png",
     ItemType.BATTLEAXE: "assets/items/battleaxe.png",

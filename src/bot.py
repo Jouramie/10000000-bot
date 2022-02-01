@@ -16,6 +16,7 @@ WAIT_AFTER_COMBO = 0.5
 
 # TODO backlog
 # Use STAR
+# Give proper value to scrolls
 # Adjust value per tile type per quest
 # Lower shield value if max shield
 # Move with 5+ key should have less value than 4 but more than 3
