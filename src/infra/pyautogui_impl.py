@@ -76,7 +76,9 @@ GRID_SIZE_X = 8
 GRID_SIZE_Y = 7
 GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 
-MOUSE_SECONDS_PER_TILE = 0.15
+
+SMALL_DISTANCE_MOUSE_SECONDS_PER_TILE = 0.15
+LARGE_DISTANCE_MOUSE_SECONDS_PER_TILE = 0.10
 
 REAL_WINDOW_TITLE = "10000000"
 TESTING_WINDOW_TITLE = "Visionneuse de photos Windows"
@@ -260,7 +262,12 @@ def _(move: TileMove) -> float:
     logger.debug(f"Starting drag from {start_drag}.")
     pyautogui.moveTo(start_drag.x, start_drag.y)
     logger.debug(f"Ending drag to {end_drag}.")
-    pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_SECONDS_PER_TILE * move.tile_to_move.grid_position.distance_between(move.grid_destination))
+    grid_distance = move.tile_to_move.grid_position.distance_between(move.grid_destination)
+    if grid_distance < 3:
+        duration = grid_distance * SMALL_DISTANCE_MOUSE_SECONDS_PER_TILE
+    else:
+        duration = grid_distance * LARGE_DISTANCE_MOUSE_SECONDS_PER_TILE
+    pyautogui.dragTo(end_drag.x, end_drag.y, duration=duration)
 
     return 0.5
 

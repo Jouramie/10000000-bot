@@ -51,7 +51,7 @@ SWORD_RESISTANT_MONSTER_TILE_VALUES = {
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
-    TileType.KEY: -1,
+    TileType.KEY: -0.5,
 }
 
 WAND_RESISTANT_MONSTER_TILE_VALUES = {
@@ -61,7 +61,7 @@ WAND_RESISTANT_MONSTER_TILE_VALUES = {
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
-    TileType.KEY: -1,
+    TileType.KEY: -0.5,
 }
 
 
@@ -71,8 +71,8 @@ GENERIC_KEY_TILE_VALUES = {
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
-    TileType.SWORD: -1,
-    TileType.WAND: -1,
+    TileType.SWORD: -0.5,
+    TileType.WAND: -0.5,
 }
 
 NO_OBJECTIVE_TILE_VALUES = {
@@ -80,9 +80,9 @@ NO_OBJECTIVE_TILE_VALUES = {
     TileType.LOGS: 1,
     TileType.CHEST: 1,
     TileType.ROCKS: 1,
-    TileType.SWORD: -2,
-    TileType.WAND: -2,
-    TileType.KEY: -2,
+    TileType.SWORD: -0.5,
+    TileType.WAND: -0.5,
+    TileType.KEY: -0.5,
 }
 
 TILE_VALUES_PER_OBJECTIVE_TYPES = {
@@ -99,7 +99,7 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
     ObjectiveType.NINJA: WAND_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.REPTILIAN: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.TREANT: GENERIC_MONSTER_TILE_VALUES,
-    ObjectiveType.DEMON: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.DEMON: SWORD_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
     ObjectiveType.DOOR: GENERIC_KEY_TILE_VALUES,
 }

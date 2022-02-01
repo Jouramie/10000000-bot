@@ -34,7 +34,6 @@ class Tile:
 
 @dataclass(frozen=True)
 class Cluster(Sized, Iterable[Tile]):
-    # FIXME this field is convenient but not necessary
     type: TileType
     tiles: FrozenSet[Tile]
 
