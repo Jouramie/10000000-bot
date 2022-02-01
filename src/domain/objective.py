@@ -175,6 +175,11 @@ ITEM_FLAT_IMPACT = {
             TileType.SHIELD: 10,
         }
     ),
+    ItemType.COFFEE: frozendict(
+        {
+            TileType.SHIELD: 10,
+        }
+    ),
 }
 
 

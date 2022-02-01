@@ -50,7 +50,7 @@ OBJETIVE_ASSETS = {
     ObjectiveType.NINJA: "assets/objectives/ninja2.png",
     ObjectiveType.REPTILIAN: "assets/objectives/reptilian2.png",
     ObjectiveType.TREANT: "assets/objectives/treant2.png",
-    ObjectiveType.DEMON: "assets/objectives/treant2.png",
+    ObjectiveType.DEMON: "assets/objectives/demon2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
     ObjectiveType.DOOR: "assets/objectives/door2.png",
 }
@@ -66,6 +66,7 @@ ITEM_ASSETS = {
     ItemType.BATTLEAXE: "assets/items/battleaxe.png",
     ItemType.BREAD: "assets/items/bread.png",
     ItemType.CHEESE: "assets/items/cheese.png",
+    ItemType.COFFEE: "assets/items/coffee.png",
     ItemType.RED_ORB: "assets/items/red-orb.png",
     ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
     ItemType.GREEN_ORB: "assets/items/green-orb.png",
@@ -75,7 +76,7 @@ GRID_SIZE_X = 8
 GRID_SIZE_Y = 7
 GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 
-MOUSE_MOVEMENT_SPEED = 1 / 600
+MOUSE_SECONDS_PER_TILE = 0.15
 
 REAL_WINDOW_TITLE = "10000000"
 TESTING_WINDOW_TITLE = "Visionneuse de photos Windows"
@@ -240,12 +241,12 @@ def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
 
 
 @singledispatch
-def do_move(move: Move):
+def do_move(move: Move) -> float:
     raise NotImplementedError(f"No implementation for {type(move)}")
 
 
 @do_move.register
-def _(move: TileMove):
+def _(move: TileMove) -> float:
     logger.info(
         f"Completing cluster {move.get_combo_type()} "
         + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
@@ -257,13 +258,17 @@ def _(move: TileMove):
     end_drag = grid_to_screen(move.grid_destination).find_center()
 
     logger.debug(f"Starting drag from {start_drag}.")
-    pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
+    pyautogui.moveTo(start_drag.x, start_drag.y)
     logger.debug(f"Ending drag to {end_drag}.")
-    pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_MOVEMENT_SPEED * start_drag.distance_between(end_drag))
+    pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_SECONDS_PER_TILE * move.tile_to_move.grid_position.distance_between(move.grid_destination))
+
+    return 0.5
 
 
 @do_move.register
-def _(move: ItemMove):
+def _(move: ItemMove) -> float:
     logger.info(f"Using item {move.item.type}.")
     click_point = move.item.screen_square.find_center()
     pyautogui.click(click_point.x, click_point.y)
+
+    return 0

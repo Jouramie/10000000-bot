@@ -15,8 +15,11 @@ RETRY_DELAY = 0
 WAIT_AFTER_COMBO = 0.5
 
 # TODO backlog
-# Use STAR
+# At equal impact, choose move with less movement
+# Add UI options to start stop movements
+# Add UI options to start stop screenshots
 # Give proper value to scrolls
+# Handle status effects
 # Adjust value per tile type per quest
 # Lower shield value if max shield
 # Move with 5+ key should have less value than 4 but more than 3
@@ -38,9 +41,11 @@ def main_loop() -> None:
             best_move = game_state.select_best_move()
 
             if MOVEMENT_ENABLED and best_move is not None:
-                do_move(best_move)
+                move_delay = do_move(best_move)
+            else:
+                move_delay = 0
 
-            sleep(0.8)
+            sleep(move_delay)
     except Exception as e:
         logger.exception(e)
         raise e

@@ -76,17 +76,10 @@ class Grid(Sized, Iterable[Tile]):
 
     @staticmethod
     def _find_pair_in_triple(triple: List[Tile]) -> Cluster | None:
-        different_types = {tile.type for tile in triple if tile.type != TileType.UNKNOWN}
-
-        # FIXME might not be needed with the add of unknown tiles
-        # Excludes the clusters with too much missing tiles
-        grid_xs = {tile.grid_position.x for tile in triple}
-        grid_ys = {tile.grid_position.y for tile in triple}
-        if sum(grid_xs) - min(grid_xs) * 3 != 3 and sum(grid_ys) - min(grid_ys) * 3 != 3:
-            return
+        different_types = {tile.type for tile in triple if tile.type != TileType.UNKNOWN and tile.type != TileType.STAR}
 
         for potential_type in different_types:
-            potential_cluster = frozenset(tile for tile in triple if tile.type == potential_type)
+            potential_cluster = frozenset(tile for tile in triple if tile.type == potential_type or tile.type == TileType.STAR)
             if len(potential_cluster) == 2:
                 return Cluster(potential_type, potential_cluster)
 
@@ -165,7 +158,7 @@ class Grid(Sized, Iterable[Tile]):
     def remove_completed_combos(self):
         combining_tiles = set()
         for triple in self.get_triples():
-            different_types = {tile.type for tile in triple}
+            different_types = {tile.type for tile in triple if tile.type != TileType.STAR}
             if len(different_types) == 1 and TileType.UNKNOWN not in different_types:
                 combining_tiles |= set(triple)
 

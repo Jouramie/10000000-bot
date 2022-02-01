@@ -16,6 +16,7 @@ class ItemType(Enum):
     BATTLEAXE = auto()
     BREAD = auto()
     CHEESE = auto()
+    COFFEE = auto()
     RED_ORB = auto()
     YELLOW_ORB = auto()
     GREEN_ORB = auto()
