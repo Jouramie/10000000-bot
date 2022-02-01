@@ -13,17 +13,21 @@ class ItemType(Enum):
     ROCK_TO_KEY_SCROLL = auto()
     KEY = auto()
     AXE = auto()
+    BATTLEAXE = auto()
     BREAD = auto()
     CHEESE = auto()
     RED_ORB = auto()
     YELLOW_ORB = auto()
+    GREEN_ORB = auto()
 
-
-def __str__(self):
-    return self.name
+    def __str__(self):
+        return self.name
 
 
 @dataclass(frozen=True)
 class Item:
     type: ItemType
     screen_square: ScreenSquare
+
+    def __str__(self):
+        return str(self.type)

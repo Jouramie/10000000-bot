@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Sized, Iterable, FrozenSet, Set
 
-from src.domain.screen import ScreenSquare, Point
+from src.domain.screen import Point
 
 
 class TileType(Enum):
@@ -23,7 +23,6 @@ class TileType(Enum):
 @dataclass(frozen=True)
 class Tile:
     type: TileType
-    screen_square: ScreenSquare | None
     grid_position: Point
 
     def has_type(self, tile_type: TileType) -> bool:

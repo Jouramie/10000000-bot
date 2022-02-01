@@ -11,10 +11,6 @@ from src.domain.tile import TileType, Tile
 @dataclass(frozen=True)
 class TileModel:
     type: TileType
-    left: int | None
-    top: int | None
-    height: int | None
-    width: int | None
     grid_x: int
     grid_y: int
 
@@ -54,10 +50,6 @@ def _(li: list) -> list:
 def _(tile: Tile) -> TileModel:
     return TileModel(
         tile.type,
-        tile.screen_square.left if tile.screen_square is not None else None,
-        tile.screen_square.top if tile.screen_square is not None else None,
-        tile.screen_square.height if tile.screen_square is not None else None,
-        tile.screen_square.width if tile.screen_square is not None else None,
         tile.grid_position.x,
         tile.grid_position.y,
     )

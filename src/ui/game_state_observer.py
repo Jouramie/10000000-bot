@@ -5,43 +5,17 @@ from typing import Callable
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 
 from src.domain.game_state import fetch_game_state
-from src.ui.model import GameStateModel, TileModel, to_model
+from src.ui.model import GameStateModel, to_model
 
 logger = logging.getLogger(__name__)
-
-
-class HighDPIPositionsSanitizer:
-    def __init__(self, display_ratio: float) -> None:
-        self.display_ratio = display_ratio
-
-    def sanitize_game_state(self, game_state: GameStateModel) -> GameStateModel:
-        return GameStateModel(tiles=[self.sanitize_tile(tile) for tile in game_state.tiles], objective=game_state.objective)
-
-    def sanitize_tile(self, tile: TileModel) -> TileModel:
-        return TileModel(
-            tile.type,
-            self.sanitize_pos(tile.left),
-            self.sanitize_pos(tile.top),
-            self.sanitize_pos(tile.height),
-            self.sanitize_pos(tile.width),
-            tile.grid_x,
-            tile.grid_y,
-        )
-
-    def sanitize_pos(self, pos: int | None) -> int | None:
-        return int(float(pos) / self.display_ratio) if pos is not None else None
 
 
 # FIXME probably don't need another thread for this. Observer could be in the bot.
 class GameStateObserverHandler(QObject):
     game_state_changed = pyqtSignal(GameStateModel)
 
-    def __init__(
-        self,
-        position_sanitizer: HighDPIPositionsSanitizer,
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.position_sanitizer = position_sanitizer
 
     @pyqtSlot()
     def run(self) -> None:
@@ -50,11 +24,7 @@ class GameStateObserverHandler(QObject):
             while True:
                 # TODO save gameState, only trigger update when it changed (only saving hash could be easier)
                 logger.debug("Fetching GameState.")
-                game_state = to_model(fetch_game_state())
-
-                game_state = self.position_sanitizer.sanitize_game_state(game_state)
-
-                self.game_state_changed.emit(game_state)
+                self.game_state_changed.emit(to_model(fetch_game_state()))
 
                 sleep(0.1)
         except Exception as e:
@@ -64,12 +34,8 @@ class GameStateObserverHandler(QObject):
 
 
 class GameStateObserver:
-    def __init__(
-        self,
-        game_state_changed_callback: Callable[[GameStateModel], None],
-        display_ratio: float,
-    ) -> None:
-        self.handler = GameStateObserverHandler(HighDPIPositionsSanitizer(display_ratio))
+    def __init__(self, game_state_changed_callback: Callable[[GameStateModel], None]) -> None:
+        self.handler = GameStateObserverHandler()
 
         self.thread = QThread()
 

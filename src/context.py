@@ -16,15 +16,13 @@ class Context:
         logger.info("Initializing context.")
 
         self.app = QApplication(sys.argv)
-        display_ratio = self.app.devicePixelRatio()
-        logger.debug(f"Display ration = {display_ratio}")
 
         # Bot
         self.bot_thread = Thread(target=main_loop)
 
         # UI
         self.overlay = Overlay()
-        self.game_state_observer = GameStateObserver(self.overlay.on_game_state_change, display_ratio)
+        self.game_state_observer = GameStateObserver(self.overlay.on_game_state_change)
 
     def start(self):
         logger.info("Starting context.")

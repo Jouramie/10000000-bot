@@ -154,12 +154,12 @@ class Grid(Sized, Iterable[Tile]):
         if shift.y == 0:
             line = self.get_row(shift_start.y)
             distance = shift.x
-            new_line = [Tile(tile.type, None, Point(x, shift_start.y)) for x, tile in enumerate(line[-distance:] + line[:-distance])]
+            new_line = [Tile(tile.type, Point(x, shift_start.y)) for x, tile in enumerate(line[-distance:] + line[:-distance])]
             return self.set_row(shift_start.y, new_line)
         else:
             line = self.get_column(shift_start.x)
             distance = shift.y
-            new_line = [Tile(tile.type, None, Point(shift_start.x, y)) for y, tile in enumerate(line[-distance:] + line[:-distance])]
+            new_line = [Tile(tile.type, Point(shift_start.x, y)) for y, tile in enumerate(line[-distance:] + line[:-distance])]
             return self.set_column(shift_start.x, new_line)
 
     def remove_completed_combos(self):
@@ -183,14 +183,11 @@ class Grid(Sized, Iterable[Tile]):
                 continue
 
             for i, tile in enumerate(column):
-                fallen_tiles.append(Tile(tile.type, None, Point(tile.grid_position.x, missing_tiles + i)))
+                fallen_tiles.append(Tile(tile.type, Point(tile.grid_position.x, missing_tiles + i)))
 
         fallen_tiles.sort(key=lambda x: x.grid_position)
 
         return InconsistentGrid(fallen_tiles, self.size)
-
-    def fill_with_previous_grid(self, previous_grid: Grid) -> Grid:
-        return self
 
     def fill_with_unknown(self) -> Grid:
         return self
@@ -199,35 +196,6 @@ class Grid(Sized, Iterable[Tile]):
 class InconsistentGrid(Grid):
     def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:
         return set()
-
-    def fill_with_previous_grid(self, previous_grid: Grid) -> Grid:
-        logger.info(f"Simulated grid: {previous_grid}")
-        logger.info(f"Scanned grid: {self}")
-        merged_grid = self.fill_with_unknown()
-        if previous_grid is None or self.size != previous_grid.size:
-            return merged_grid
-
-        tiles = merged_grid.tiles
-
-        for y in range(self.size.y):
-            for x in range(self.size.x):
-                index = x + y * self.size.x
-                if merged_grid.get(x, y).type is TileType.UNKNOWN:
-                    tiles[index] = Tile(previous_grid.get(x, y).type, None, Point(x, y))
-                    # if y == 0 or y == self.size.y - 1:
-                    #    tiles[index] = Tile(previous_grid.get(x, y).type, previous_grid.get(x, y).screen_square, Point(x, y))
-                    #    continue
-
-                    # found_tile_is_superior = merged_grid.get(x, y).type is previous_grid.get(x, y + 1).type or merged_grid.get(x, y).type is TileType.UNKNOWN
-                    # if found_tile_is_superior and (self.get(x, y - 1) is None or self.get(x, y - 1).type is previous_grid.get(x, y).type):
-                    #    tiles[index] = Tile(previous_grid.get(x, y).type, previous_grid.get(x, y).screen_square, Point(x, y))
-                    #    if y == 1:
-                    #        tiles[index - self.size.x] = Tile(TileType.UNKNOWN, None, Point(x, y))
-                    #    continue
-
-                    # tiles[index] = Tile(previous_grid.get(x, y).type, None, Point(x, y))
-
-        return merged_grid
 
     def fill_with_unknown(self) -> Grid:
         tiles = self.tiles.copy()
@@ -238,7 +206,7 @@ class InconsistentGrid(Grid):
                 index = x + y * self.size.x
                 expected_grid_position = Point(x, y)
                 if len(tiles) <= index or tiles[index].grid_position != expected_grid_position:
-                    tiles.insert(index, Tile(TileType.UNKNOWN, None, expected_grid_position))
+                    tiles.insert(index, Tile(TileType.UNKNOWN, expected_grid_position))
 
         return Grid(tiles, self.size)
 

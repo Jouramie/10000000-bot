@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Set
+from typing import FrozenSet
 
 from src.domain.grid import Grid, EmptyGrid
 from src.domain.item import Item
@@ -15,10 +15,10 @@ logger.setLevel(logging.INFO)
 class GameState:
     grid: Grid = EmptyGrid()
     objective: Objective = Objective()
-    items: Set[Item] = frozenset()
+    items: FrozenSet[Item] = frozenset()
 
     def select_best_move(self) -> TileMove | None:
-        possible_moves = self.grid.find_possible_moves() | {create_item_move(item) for item in self.items}
+        possible_moves = self.grid.fill_with_unknown().find_possible_moves() | {create_item_move(item) for item in self.items}
 
         if not possible_moves:
             logger.warning("No moves available.")
@@ -45,7 +45,8 @@ game_state = GameState()
 def update_game_state() -> GameState:
     global game_state
 
-    game_state = GameState(*detect_game_state())
+    grid, objective, items = detect_game_state()
+    game_state = GameState(grid, objective, items)
 
     logger.info(f"GameState updated. {len(game_state.grid)} tiles. Objective: {game_state.objective.type}.")
     return game_state

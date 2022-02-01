@@ -13,7 +13,7 @@ from PIL.Image import Image
 
 from src.domain.grid import Grid, InconsistentGrid, EmptyGrid
 from src.domain.item import Item, ItemType
-from src.domain.objective import Objective, ObjectiveType, Move, TileMove, ItemMove
+from src.domain.objective import Objective, ObjectiveType, TileMove, ItemMove, Move
 from src.domain.screen import ScreenSquare, Point
 from src.domain.tile import TileType, Tile
 
@@ -50,6 +50,7 @@ OBJETIVE_ASSETS = {
     ObjectiveType.NINJA: "assets/objectives/ninja2.png",
     ObjectiveType.REPTILIAN: "assets/objectives/reptilian2.png",
     ObjectiveType.TREANT: "assets/objectives/treant2.png",
+    ObjectiveType.DEMON: "assets/objectives/treant2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
     ObjectiveType.DOOR: "assets/objectives/door2.png",
 }
@@ -57,12 +58,16 @@ OBJETIVE_ASSETS = {
 ITEM_ASSETS = {
     ItemType.LOG_TO_KEY_SCROLL: "assets/items/log-to-key-scroll.png",
     ItemType.LOG_TO_WAND_SCROLL: "assets/items/log-to-wand-scroll.png",
+    ItemType.LOG_TO_SWORD_SCROLL: "assets/items/log-to-sword-scroll.png",
+    ItemType.ROCK_TO_KEY_SCROLL: "assets/items/rock-to-key-scroll.png",
     ItemType.KEY: "assets/items/key.png",
     ItemType.AXE: "assets/items/axe.png",
+    ItemType.BATTLEAXE: "assets/items/battleaxe.png",
     ItemType.BREAD: "assets/items/bread.png",
     ItemType.CHEESE: "assets/items/cheese.png",
     ItemType.RED_ORB: "assets/items/red-orb.png",
     ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
+    ItemType.GREEN_ORB: "assets/items/green-orb.png",
 }
 
 GRID_SIZE_X = 8
@@ -118,7 +123,6 @@ def find_window_region(title) -> pyscreeze.Box | None:
 
     try:
         window_handle = win32gui.FindWindow(None, actual_game_window)
-        # window_handle = win32gui.FindWindow(None, title)
         win_region = win32gui.GetWindowRect(window_handle)
     except Exception as e:
         return None
@@ -169,7 +173,7 @@ def find_grid(region: pyscreeze.Box, screenshot: Image) -> Grid:
 
         # TODO instead of ignoring the tile, it should be recalculated (only between the found possibilities to speed up)
         if grid_position not in {t.grid_position for t in tiles}:
-            tiles.append(Tile(tile[0], screen_square, grid_position))
+            tiles.append(Tile(tile[0], grid_position))
 
     tiles = sorted(tiles, key=lambda tile: tile.grid_position)
 
@@ -204,7 +208,7 @@ def find_items(region: pyscreeze.Box, screenshot: Image) -> FrozenSet[Item]:
         for square in locate_all_on_window(asset, region, screenshot, grayscale=True)
     }
 
-    logger.info(f"Found items {items}.")
+    logger.info(f"Found items {[str(item) for item in items]}.")
     return frozenset(items)
 
 
@@ -228,7 +232,7 @@ def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
     region, screenshot = packed_screenshot
     found_grid = find_grid(region, screenshot)
 
-    if len(found_grid) < 16 and SCREENSHOT_LOGGING_ENABLED:
+    if len(found_grid) > 16 and SCREENSHOT_LOGGING_ENABLED:
         log_screenshot(screenshot)
 
     return found_grid, find_objective(*packed_screenshot), find_items(*packed_screenshot)
@@ -236,31 +240,7 @@ def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
 
 @singledispatch
 def do_move(move: Move):
-    if isinstance(move, TileMove):
-        logger.info(
-            f"Completing cluster {move.get_combo_type()} "
-            + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
-            + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
-            f"moving to ({move.grid_destination.x}, {move.grid_destination.y}) for expected impact " + str(dict(move.impact))
-        )
-    elif isinstance(move, ItemMove):
-        logger.info(f"Using item {move.item.type}.")
-
-    mouse_movement = move.calculate_mouse_movement()
-
-    if len(mouse_movement) == 2:
-        start_drag = mouse_movement[0]
-        end_drag = mouse_movement[1]
-
-        logger.debug(f"Starting drag from {start_drag}.")
-        pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
-        logger.debug(f"Ending drag to {end_drag}.")
-        pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_MOVEMENT_SPEED * start_drag.distance_between(end_drag))
-
-    else:
-        click_point = move.item.screen_square.find_center()
-
-        pyautogui.click(click_point.x, click_point.y)
+    raise NotImplementedError(f"No implementation for {type(move)}")
 
 
 @do_move.register

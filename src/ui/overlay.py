@@ -36,8 +36,6 @@ TILE_FILL_COLORS = {
 
 TILE_DIMENSION = 50
 
-GRID_TOP_OFFSET = -700
-
 
 class Overlay(QWidget):
     def __init__(self):
@@ -86,15 +84,15 @@ class Overlay(QWidget):
             logger.debug("Received no tiles to display :(")
             return
 
-        min_left = min([tile.left for tile in self.game_state.tiles if tile.left is not None])
-        min_top = min([tile.top for tile in self.game_state.tiles if tile.top is not None])
+        min_left = 1700
+        min_top = 220
 
         painter = QPainter(self)
         for tile in self.game_state.tiles:
             if tile.type == TileType.UNKNOWN:
                 continue
 
-            rect = [min_left + tile.grid_x * TILE_DIMENSION, min_top + tile.grid_y * TILE_DIMENSION + GRID_TOP_OFFSET, TILE_DIMENSION, TILE_DIMENSION]
+            rect = [min_left + tile.grid_x * TILE_DIMENSION, min_top + tile.grid_y * TILE_DIMENSION, TILE_DIMENSION, TILE_DIMENSION]
             painter.setPen(QPen(TILE_BORDER_COLORS[tile.type], 1))
             painter.setBrush(QBrush(TILE_FILL_COLORS[tile.type], Qt.BrushStyle.SolidPattern))
             painter.drawRect(*rect)
