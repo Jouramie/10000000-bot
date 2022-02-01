@@ -4,10 +4,7 @@ from unittest import TestCase
 from src.domain.grid import Grid
 from src.domain.screen import Point
 from src.domain.tile import TileType, Tile
-
-
-def _a_grid(tile_types: List[TileType], size: Point):
-    return Grid([Tile(tile_types[x + y * size.x], None, Point(x, y)) for y in range(size.y) for x in range(size.x)], size)
+from test.utils import _a_grid
 
 
 def _to_types(tiles: List[List[Tile]]) -> List[List[TileType]]:
@@ -150,7 +147,7 @@ class TestGridDoubleComboWithGravity(TestCase):
     )
 
     def when_simulate_line_shift_then_the_two_combos_are_counted(self):
-        impact = self.grid.simulate_line_shift(Point(1, 0), Point(1, 2))
+        impact = self.grid.simulate_line_shift(Point(1, 0), Point(1, 2))[0]
 
         self.assertEqual(
             {TileType.KEY: 3, TileType.SWORD: 3},

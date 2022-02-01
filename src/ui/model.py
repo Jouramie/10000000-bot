@@ -32,7 +32,7 @@ class GameStateModel:
 
 @singledispatch
 def to_model(obj):
-    raise NotImplementedError()
+    raise NotImplementedError(f"No implementation for {type(obj)}")
 
 
 @to_model.register

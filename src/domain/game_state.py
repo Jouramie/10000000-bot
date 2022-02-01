@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Set
 
-from src.domain.grid import Grid, InconsistentGrid
+from src.domain.grid import Grid, EmptyGrid
 from src.domain.item import Item
 from src.domain.objective import Objective, TileMove, create_item_move
 from src.infra.pyautogui_impl import detect_game_state
@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 
 @dataclass
 class GameState:
-    grid: Grid = InconsistentGrid()
+    grid: Grid = EmptyGrid()
     objective: Objective = Objective()
     items: Set[Item] = frozenset()
 

@@ -1,14 +1,17 @@
 import logging
-from functools import reduce
+import os
+import re
+from datetime import datetime
+from functools import reduce, singledispatch
+from pathlib import Path
 from typing import List, Tuple, FrozenSet
 
 import pyautogui
 import pyscreeze
-import pywintypes
 import win32gui
 from PIL.Image import Image
 
-from src.domain.grid import Grid, InconsistentGrid
+from src.domain.grid import Grid, InconsistentGrid, EmptyGrid
 from src.domain.item import Item, ItemType
 from src.domain.objective import Objective, ObjectiveType, Move, TileMove, ItemMove
 from src.domain.screen import ScreenSquare, Point
@@ -17,6 +20,8 @@ from src.domain.tile import TileType, Tile
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
+SAVED_SCREENSHOT_QUANTITY = 20
 
 TILE_ASSETS = {
     TileType.CHEST: "assets/tiles/chest.png",
@@ -29,7 +34,7 @@ TILE_ASSETS = {
     TileType.STAR: "assets/tiles/star.png",
 }
 
-TILE_DIMENSION = 84
+TILE_DIMENSION = 86
 
 OBJETIVE_ASSETS = {
     ObjectiveType.ZOMBIE: "assets/objectives/zombie2.png",
@@ -41,8 +46,10 @@ OBJETIVE_ASSETS = {
     ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
     ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
     ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
-    ObjectiveType.GOLEM: "assets/objectives/golem.png",
+    ObjectiveType.GOLEM: "assets/objectives/golem2.png",
     ObjectiveType.NINJA: "assets/objectives/ninja2.png",
+    ObjectiveType.REPTILIAN: "assets/objectives/reptilian2.png",
+    ObjectiveType.TREANT: "assets/objectives/treant2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
     ObjectiveType.DOOR: "assets/objectives/door2.png",
 }
@@ -53,22 +60,35 @@ ITEM_ASSETS = {
     ItemType.KEY: "assets/items/key.png",
     ItemType.AXE: "assets/items/axe.png",
     ItemType.BREAD: "assets/items/bread.png",
-    ItemType.CHEESE: "assets/items/bread.png",
+    ItemType.CHEESE: "assets/items/cheese.png",
     ItemType.RED_ORB: "assets/items/red-orb.png",
     ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
 }
-
 
 GRID_SIZE_X = 8
 GRID_SIZE_Y = 7
 GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 
-
 MOUSE_MOVEMENT_SPEED = 1 / 600
 
 REAL_WINDOW_TITLE = "10000000"
-TESTING_WINDOW_TITLE = "ninja-mid-combo.png - Greenshot image editor"
-GAME_WINDOW_TITLE = TESTING_WINDOW_TITLE
+TESTING_WINDOW_TITLE = "Visionneuse de photos Windows"
+EXCLUDED_WINDOWS_PATTERN = {r"10000000 - .+\.py"}
+GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
+
+SCREENSHOT_LOGGING_ENABLED = GAME_WINDOW_TITLE == REAL_WINDOW_TITLE
+
+
+_grid_left = 0
+_grid_top = 0
+
+
+def screen_to_grid(screen_square: ScreenSquare | pyscreeze.Box) -> Point:
+    return Point(round((screen_square.left - _grid_left) / TILE_DIMENSION), round((screen_square.top - _grid_top) / TILE_DIMENSION))
+
+
+def grid_to_screen(point: Point) -> ScreenSquare:
+    return ScreenSquare(_grid_left + point.x * TILE_DIMENSION, _grid_top + point.y * TILE_DIMENSION, TILE_DIMENSION, TILE_DIMENSION)
 
 
 def activate_window(title):
@@ -89,13 +109,18 @@ def activate_window(title):
 def find_window_region(title) -> pyscreeze.Box | None:
     # activate_window(title)
 
-    possible_game_windows = [win.title for win in pyautogui.getWindowsWithTitle(title)]
-    logger.debug(f"Found {len(possible_game_windows)} possible game windows: {possible_game_windows}.")
+    possible_game_windows = [window.title for window in pyautogui.getWindowsWithTitle(title)]
+    logger.info(f"Found {len(possible_game_windows)} possible game windows: {possible_game_windows}.")
 
-    window_handle = win32gui.FindWindow(None, title)
+    actual_game_window = title if title in possible_game_windows else possible_game_windows[0]
+    if True in {re.match(pattern, actual_game_window) for pattern in EXCLUDED_WINDOWS_PATTERN}:
+        return None
+
     try:
+        window_handle = win32gui.FindWindow(None, actual_game_window)
+        # window_handle = win32gui.FindWindow(None, title)
         win_region = win32gui.GetWindowRect(window_handle)
-    except pywintypes.error as e:
+    except Exception as e:
         return None
 
     return pyscreeze.Box(win_region[0], win_region[1], win_region[2] - win_region[0], win_region[3] - win_region[1])
@@ -118,15 +143,8 @@ def locate_all_on_window(needle_image, region: pyscreeze.Box, screenshot: Image,
     ]
 
 
-def find_grid() -> Grid:
+def find_grid(region: pyscreeze.Box, screenshot: Image) -> Grid:
     """Should detect 8x7 56 tiles."""
-    packed_screenshot = screenshot_window(GAME_WINDOW_TITLE)
-
-    if packed_screenshot is None:
-        return InconsistentGrid([], GRID_SIZE)
-
-    region, screenshot = packed_screenshot
-
     # TODO lower confidence and undupe images
     prospect_tiles = [
         (tile_type, ScreenSquare(tile.left, tile.top, tile.height, tile.width))
@@ -135,16 +153,19 @@ def find_grid() -> Grid:
     ]
 
     if not prospect_tiles:
-        logger.warning(f"No tiles found. Returning InconsistentGrid")
-        return InconsistentGrid([], GRID_SIZE)
+        logger.warning(f"No tiles found. Returning EmptyGrid.")
+        return EmptyGrid()
 
-    min_left = min([tile[1].left for tile in prospect_tiles])
-    min_top = min([tile[1].top for tile in prospect_tiles])
+    global _grid_left
+    global _grid_top
+
+    _grid_left = min(tile[1].left for tile in prospect_tiles)
+    _grid_top = min(tile[1].top for tile in prospect_tiles)
 
     tiles = []
     for tile in prospect_tiles:
         screen_square = tile[1]
-        grid_position = Point(round((screen_square.left - min_left) / TILE_DIMENSION), round((screen_square.top - min_top) / TILE_DIMENSION))
+        grid_position = screen_to_grid(screen_square)
 
         # TODO instead of ignoring the tile, it should be recalculated (only between the found possibilities to speed up)
         if grid_position not in {t.grid_position for t in tiles}:
@@ -152,27 +173,17 @@ def find_grid() -> Grid:
 
     tiles = sorted(tiles, key=lambda tile: tile.grid_position)
 
-    size_x = len({tile.grid_position.x for tile in tiles})
-    size_y = len({tile.grid_position.y for tile in tiles})
+    size_x = max(tile.grid_position.x for tile in tiles) + 1
+    size_y = max(tile.grid_position.y for tile in tiles) + 1
+    grid = InconsistentGrid(tiles, Point(size_x, size_y))
     if size_x != GRID_SIZE_X or size_y != GRID_SIZE_Y:
         logger.warning(f"Detected grid is {size_x} / {size_y}. Expected grid should be {GRID_SIZE_X} / {GRID_SIZE_Y}. Returning InconsistentGrid")
-        return InconsistentGrid(tiles, GRID_SIZE)
+        return grid
 
-    # FIXME there should be a better approximation... meh what ever
-
-    for y in range(0, GRID_SIZE_Y):
-        for x in range(0, GRID_SIZE_X):
-            index = x + y * GRID_SIZE_X
-            expected_grid_position = Point(x, y)
-            if len(tiles) <= index or tiles[index].grid_position != expected_grid_position:
-                tiles.insert(index, Tile(TileType.UNKNOWN, None, expected_grid_position))
-
-    return Grid(tiles, GRID_SIZE)
+    return grid
 
 
-def find_objective() -> Objective:
-    region, screenshot = screenshot_window(GAME_WINDOW_TITLE)
-
+def find_objective(region: pyscreeze.Box, screenshot: Image) -> Objective:
     objectives = [
         Objective(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
         for objective_assets, asset in OBJETIVE_ASSETS.items()
@@ -186,9 +197,7 @@ def find_objective() -> Objective:
     return sorted(objectives, key=lambda x: x.screen_square.left)[0]
 
 
-def find_items() -> FrozenSet[Item]:
-    region, screenshot = screenshot_window(GAME_WINDOW_TITLE)
-
+def find_items(region: pyscreeze.Box, screenshot: Image) -> FrozenSet[Item]:
     items = {
         Item(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
         for objective_assets, asset in ITEM_ASSETS.items()
@@ -199,10 +208,33 @@ def find_items() -> FrozenSet[Item]:
     return frozenset(items)
 
 
+def log_screenshot(screenshot: Image):
+    logs_folder = Path("logs")
+    if not logs_folder.exists():
+        logs_folder.mkdir()
+    screenshot.save(Path(f"logs/{datetime.now().replace().isoformat().replace(':', '')}.tiff"))
+
+    saved_screenshots = os.listdir("logs")
+
+    if len(saved_screenshots) > SAVED_SCREENSHOT_QUANTITY:
+        os.remove(Path(f"logs/{sorted(saved_screenshots)[0]}"))
+
+
 def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
-    return find_grid(), find_objective(), find_items()
+    packed_screenshot = screenshot_window(GAME_WINDOW_TITLE)
+    if packed_screenshot is None:
+        return EmptyGrid(), Objective(), frozenset()
+
+    region, screenshot = packed_screenshot
+    found_grid = find_grid(region, screenshot)
+
+    if len(found_grid) < 16 and SCREENSHOT_LOGGING_ENABLED:
+        log_screenshot(screenshot)
+
+    return found_grid, find_objective(*packed_screenshot), find_items(*packed_screenshot)
 
 
+@singledispatch
 def do_move(move: Move):
     if isinstance(move, TileMove):
         logger.info(
@@ -231,6 +263,26 @@ def do_move(move: Move):
         pyautogui.click(click_point.x, click_point.y)
 
 
-if __name__ == "__main__":
-    logging.basicConfig()
-    print(find_objective())
+@do_move.register
+def _(move: TileMove):
+    logger.info(
+        f"Completing cluster {move.get_combo_type()} "
+        + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
+        + f"with ({move.tile_to_move.grid_position.x}, {move.tile_to_move.grid_position.y}). "
+        f"moving to ({move.grid_destination.x}, {move.grid_destination.y}) for expected impact " + str(dict(move.impact))
+    )
+
+    start_drag = grid_to_screen(move.tile_to_move.grid_position).find_center()
+    end_drag = grid_to_screen(move.grid_destination).find_center()
+
+    logger.debug(f"Starting drag from {start_drag}.")
+    pyautogui.moveTo(start_drag.x, start_drag.y, duration=0.2)
+    logger.debug(f"Ending drag to {end_drag}.")
+    pyautogui.dragTo(end_drag.x, end_drag.y, duration=MOUSE_MOVEMENT_SPEED * start_drag.distance_between(end_drag))
+
+
+@do_move.register
+def _(move: ItemMove):
+    logger.info(f"Using item {move.item.type}.")
+    click_point = move.item.screen_square.find_center()
+    pyautogui.click(click_point.x, click_point.y)

@@ -34,6 +34,8 @@ TILE_FILL_COLORS = {
     TileType.UNKNOWN: QColor(126, 126, 126, 80),
 }
 
+TILE_DIMENSION = 50
+
 GRID_TOP_OFFSET = -700
 
 
@@ -92,7 +94,7 @@ class Overlay(QWidget):
             if tile.type == TileType.UNKNOWN:
                 continue
 
-            rect = [min_left + tile.grid_x * tile.width, min_top + tile.grid_y * tile.height + GRID_TOP_OFFSET, tile.height, tile.width]
+            rect = [min_left + tile.grid_x * TILE_DIMENSION, min_top + tile.grid_y * TILE_DIMENSION + GRID_TOP_OFFSET, TILE_DIMENSION, TILE_DIMENSION]
             painter.setPen(QPen(TILE_BORDER_COLORS[tile.type], 1))
             painter.setBrush(QBrush(TILE_FILL_COLORS[tile.type], Qt.BrushStyle.SolidPattern))
             painter.drawRect(*rect)

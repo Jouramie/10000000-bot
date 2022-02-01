@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from typing import List, Set, Tuple, Sized, Iterable, Dict
 
@@ -6,6 +9,9 @@ from frozendict import frozendict
 from src.domain.objective import TileMove
 from src.domain.screen import Point
 from src.domain.tile import TileType, Tile, Cluster
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 @dataclass(frozen=True)
@@ -30,6 +36,11 @@ class Grid(Sized, Iterable[Tile]):
         for row in self.get_rows():
             grid += str([str(tile) for tile in row]) + "\n"
         return grid[:-1]
+
+    def get(self, x, y) -> Tile:
+        for tile in self.tiles:
+            if tile.grid_position.x == x and tile.grid_position.y == y:
+                return tile
 
     def get_row(self, y) -> List[Tile]:
         return [tile for tile in self.tiles if tile.grid_position.y == y]
@@ -97,7 +108,7 @@ class Grid(Sized, Iterable[Tile]):
                 matching_tiles = {(row_index, tile) for row_index, row in completing_cluster_rows.items() for tile in row if tile.type == cluster.type}
                 for y, matching_tile in matching_tiles:
                     destination = Point(x, y)
-                    movements.add(TileMove(self.simulate_line_shift(matching_tile.grid_position, destination), cluster, matching_tile, destination))
+                    movements.add(TileMove(self.simulate_line_shift(matching_tile.grid_position, destination)[0], cluster, matching_tile, destination))
             else:
                 y = cluster.get_completed_line_index()
                 completing_column_indices = cluster.find_completing_column_indices()
@@ -106,11 +117,11 @@ class Grid(Sized, Iterable[Tile]):
                 matching_tiles = {(row_no, tile) for row_no, row in completing_cluster_columns.items() for tile in row if tile.type == cluster.type}
                 for x, matching_tile in matching_tiles:
                     destination = Point(x, y)
-                    movements.add(TileMove(self.simulate_line_shift(matching_tile.grid_position, destination), cluster, matching_tile, destination))
+                    movements.add(TileMove(self.simulate_line_shift(matching_tile.grid_position, destination)[0], cluster, matching_tile, destination))
 
         return movements
 
-    def simulate_line_shift(self, shift_start: Point, shift_destination: Point) -> Dict[TileType, int]:
+    def simulate_line_shift(self, shift_start: Point, shift_destination: Point) -> Tuple[Dict[TileType, int], Grid]:
         """
         1. Shift
         2. Remove combining tiles
@@ -133,7 +144,7 @@ class Grid(Sized, Iterable[Tile]):
 
             impact[tile.type] += 1
 
-        return frozendict(impact)
+        return frozendict(impact), simulated_grid.fill_with_unknown()
 
     def shift(self, shift_start: Point, shift_destination: Point):
         assert shift_start.x == shift_destination.x or shift_start.y == shift_destination.y
@@ -178,12 +189,63 @@ class Grid(Sized, Iterable[Tile]):
 
         return InconsistentGrid(fallen_tiles, self.size)
 
+    def fill_with_previous_grid(self, previous_grid: Grid) -> Grid:
+        return self
+
+    def fill_with_unknown(self) -> Grid:
+        return self
+
 
 class InconsistentGrid(Grid):
-    def __init__(self, tiles=None, size: Point = Point(0, 0)):
-        if tiles is None:
-            tiles = []
-        super().__init__(tiles, size)
+    def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:
+        return set()
+
+    def fill_with_previous_grid(self, previous_grid: Grid) -> Grid:
+        logger.info(f"Simulated grid: {previous_grid}")
+        logger.info(f"Scanned grid: {self}")
+        merged_grid = self.fill_with_unknown()
+        if previous_grid is None or self.size != previous_grid.size:
+            return merged_grid
+
+        tiles = merged_grid.tiles
+
+        for y in range(self.size.y):
+            for x in range(self.size.x):
+                index = x + y * self.size.x
+                if merged_grid.get(x, y).type is TileType.UNKNOWN:
+                    tiles[index] = Tile(previous_grid.get(x, y).type, None, Point(x, y))
+                    # if y == 0 or y == self.size.y - 1:
+                    #    tiles[index] = Tile(previous_grid.get(x, y).type, previous_grid.get(x, y).screen_square, Point(x, y))
+                    #    continue
+
+                    # found_tile_is_superior = merged_grid.get(x, y).type is previous_grid.get(x, y + 1).type or merged_grid.get(x, y).type is TileType.UNKNOWN
+                    # if found_tile_is_superior and (self.get(x, y - 1) is None or self.get(x, y - 1).type is previous_grid.get(x, y).type):
+                    #    tiles[index] = Tile(previous_grid.get(x, y).type, previous_grid.get(x, y).screen_square, Point(x, y))
+                    #    if y == 1:
+                    #        tiles[index - self.size.x] = Tile(TileType.UNKNOWN, None, Point(x, y))
+                    #    continue
+
+                    # tiles[index] = Tile(previous_grid.get(x, y).type, None, Point(x, y))
+
+        return merged_grid
+
+    def fill_with_unknown(self) -> Grid:
+        tiles = self.tiles.copy()
+
+        # FIXME there should be a better approximation for screensize... meh what ever
+        for y in range(0, self.size.y):
+            for x in range(0, self.size.x):
+                index = x + y * self.size.x
+                expected_grid_position = Point(x, y)
+                if len(tiles) <= index or tiles[index].grid_position != expected_grid_position:
+                    tiles.insert(index, Tile(TileType.UNKNOWN, None, expected_grid_position))
+
+        return Grid(tiles, self.size)
+
+
+class EmptyGrid(Grid):
+    def __init__(self):
+        super().__init__([], Point(0, 0))
 
     def find_clusters(self, minimal_quantity=2, maximal_distance=3) -> Set[Tuple[Tile]]:
         return set()

@@ -23,6 +23,8 @@ class ObjectiveType(Enum):
     RED_DRAGON = auto()
     GOLEM = auto()
     NINJA = auto()
+    REPTILIAN = auto()
+    TREANT = auto()
     CHEST = auto()
     DOOR = auto()
     # DOOR2 = auto()
@@ -40,6 +42,27 @@ GENERIC_MONSTER_TILE_VALUES = {
     TileType.ROCKS: 1,
     TileType.KEY: -1,
 }
+
+SWORD_RESISTANT_MONSTER_TILE_VALUES = {
+    TileType.WAND: 4,
+    TileType.SWORD: 2,
+    TileType.SHIELD: 2,
+    TileType.LOGS: 1,
+    TileType.CHEST: 1,
+    TileType.ROCKS: 1,
+    TileType.KEY: -1,
+}
+
+WAND_RESISTANT_MONSTER_TILE_VALUES = {
+    TileType.SWORD: 4,
+    TileType.WAND: 2,
+    TileType.SHIELD: 2,
+    TileType.LOGS: 1,
+    TileType.CHEST: 1,
+    TileType.ROCKS: 1,
+    TileType.KEY: -1,
+}
+
 
 GENERIC_KEY_TILE_VALUES = {
     TileType.KEY: 3,
@@ -69,10 +92,12 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
     ObjectiveType.FALLEN_SOLDIER: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.WHITE_DRAGON: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.FIRE_ELEMENTAL: GENERIC_MONSTER_TILE_VALUES,
-    ObjectiveType.WATER_ELEMENTAL: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.WATER_ELEMENTAL: WAND_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.RED_DRAGON: GENERIC_MONSTER_TILE_VALUES,
-    ObjectiveType.GOLEM: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.GOLEM: SWORD_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.NINJA: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.REPTILIAN: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.TREANT: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
     ObjectiveType.DOOR: GENERIC_KEY_TILE_VALUES,
 }
@@ -174,7 +199,7 @@ class ItemMove(Move):
         return [self.item.screen_square.find_center()]
 
     def calculate_score(self, value_per_tile_type: Dict[TileType, int]) -> int:
-        return super(ItemMove, self).calculate_score(value_per_tile_type)
+        return super().calculate_score(value_per_tile_type)
 
 
 def create_item_move(item: Item, impact: FrozenOrderedDict[TileType, int] | None = None) -> ItemMove:

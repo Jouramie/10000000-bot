@@ -1,10 +1,12 @@
 from unittest import TestCase
-from unittest.mock import patch
 
 from PIL import Image
+from pyscreeze import Box
 
+from src.domain.screen import Point
 from src.domain.tile import TileType
 from src.infra.pyautogui_impl import find_grid
+from test.utils import _a_grid
 
 easy_grid = Image.open("test/infra/easy-grid.png")
 key_in_wrong_column_4_3 = Image.open("test/infra/key-in-wrong-column-4-3.png")
@@ -12,13 +14,19 @@ sword_not_detected_1_6 = Image.open("test/infra/sword-not-detected-1-6.png")
 star_6_0 = Image.open("test/infra/star-6-0.png")
 so_many_errors = Image.open("test/infra/so-many-errors.png")
 while_combo = Image.open("test/infra/while-combo.png")
+after_combo = Image.open("test/infra/after-combo.png")
+two_steps_double_match_combo = Image.open("test/infra/two-steps-double-match-combo.png")
+
+real_grid_size = Point(8, 7)
+
+
+def _to_region(image: Image) -> Box:
+    return Box(0, 0, image.size[0], image.size[1])
 
 
 class TestFindGrid(TestCase):
-    @patch("pyautogui.screenshot", return_value=easy_grid)
-    @patch("win32gui.GetWindowRect", return_value=(0, 0, easy_grid.size[0], easy_grid.size[1]))
-    def test_find_grid(self, screenshot, get_window_rect):
-        grid = find_grid()
+    def test_find_grid(self):
+        grid = find_grid(_to_region(easy_grid), easy_grid)
 
         expected_grid = [
             TileType.WAND,
@@ -81,10 +89,8 @@ class TestFindGrid(TestCase):
 
         self.assertEqual(expected_grid, [tile.type for tile in grid])
 
-    @patch("pyautogui.screenshot", return_value=star_6_0)
-    @patch("win32gui.GetWindowRect", return_value=(0, 0, star_6_0.size[0], star_6_0.size[1]))
-    def test_star_6_0(self, screenshot, get_window_rect):
-        grid = find_grid()
+    def test_star_6_0(self):
+        grid = find_grid(_to_region(star_6_0), star_6_0)
 
         expected_grid = [
             TileType.SWORD,
@@ -147,10 +153,8 @@ class TestFindGrid(TestCase):
 
         self.assertEqual(expected_grid, [tile.type for tile in grid])
 
-    @patch("pyautogui.screenshot", return_value=key_in_wrong_column_4_3)
-    @patch("win32gui.GetWindowRect", return_value=(0, 0, key_in_wrong_column_4_3.size[0], key_in_wrong_column_4_3.size[1]))
-    def test_key_in_wrong_column_4_3(self, screenshot, get_window_rect):
-        grid = find_grid()
+    def test_key_in_wrong_column_4_3(self):
+        grid = find_grid(_to_region(key_in_wrong_column_4_3), key_in_wrong_column_4_3)
 
         expected_grid = [
             TileType.LOGS,
@@ -213,10 +217,8 @@ class TestFindGrid(TestCase):
 
         self.assertEqual(expected_grid, [tile.type for tile in grid])
 
-    @patch("pyautogui.screenshot", return_value=so_many_errors)
-    @patch("win32gui.GetWindowRect", return_value=(0, 0, so_many_errors.size[0], so_many_errors.size[1]))
-    def test_so_many_errors(self, screenshot, get_window_rect):
-        grid = find_grid()
+    def test_so_many_errors(self):
+        grid = find_grid(_to_region(so_many_errors), so_many_errors)
 
         expected_grid = [
             TileType.KEY,
@@ -279,10 +281,8 @@ class TestFindGrid(TestCase):
 
         self.assertEqual(expected_grid, [tile.type for tile in grid])
 
-    @patch("pyautogui.screenshot", return_value=sword_not_detected_1_6)
-    @patch("win32gui.GetWindowRect", return_value=(0, 0, sword_not_detected_1_6.size[0], sword_not_detected_1_6.size[1]))
-    def test_sword_not_detected_1_6(self, screenshot, get_window_rect):
-        grid = find_grid()
+    def test_sword_not_detected_1_6(self):
+        grid = find_grid(_to_region(sword_not_detected_1_6), sword_not_detected_1_6)
 
         expected_grid = [
             TileType.WAND,
@@ -345,10 +345,8 @@ class TestFindGrid(TestCase):
 
         self.assertEqual(expected_grid, [tile.type for tile in grid])
 
-    @patch("pyautogui.screenshot", return_value=while_combo)
-    @patch("win32gui.GetWindowRect", return_value=(0, 0, while_combo.size[0], while_combo.size[1]))
-    def test_sword_not_detected_1_6(self, screenshot, get_window_rect):
-        grid = find_grid()
+    def test_while_combo(self):
+        grid = find_grid(_to_region(while_combo), while_combo)
 
         expected_grid = [
             TileType.SWORD,
@@ -407,6 +405,258 @@ class TestFindGrid(TestCase):
             TileType.LOGS,
             TileType.KEY,
             TileType.WAND,
+        ]
+
+        self.assertEqual(expected_grid, [tile.type for tile in grid])
+
+    def test_after_combo(self):
+        simulated_post_combo_grid = _a_grid(
+            [
+                TileType.WAND,
+                TileType.WAND,
+                TileType.KEY,
+                TileType.ROCKS,
+                TileType.LOGS,
+                TileType.UNKNOWN,
+                TileType.WAND,
+                TileType.KEY,
+                TileType.LOGS,
+                TileType.ROCKS,
+                TileType.LOGS,
+                TileType.KEY,
+                TileType.ROCKS,
+                TileType.UNKNOWN,
+                TileType.WAND,
+                TileType.LOGS,
+                TileType.LOGS,
+                TileType.WAND,
+                TileType.WAND,
+                TileType.SWORD,
+                TileType.SHIELD,
+                TileType.UNKNOWN,
+                TileType.KEY,
+                TileType.ROCKS,
+                TileType.SHIELD,
+                TileType.SWORD,
+                TileType.SWORD,
+                TileType.CHEST,
+                TileType.LOGS,
+                TileType.WAND,
+                TileType.CHEST,
+                TileType.KEY,
+                TileType.SWORD,
+                TileType.KEY,
+                TileType.LOGS,
+                TileType.CHEST,
+                TileType.KEY,
+                TileType.SWORD,
+                TileType.WAND,
+                TileType.LOGS,
+                TileType.CHEST,
+                TileType.LOGS,
+                TileType.ROCKS,
+                TileType.SWORD,
+                TileType.SHIELD,
+                TileType.CHEST,
+                TileType.KEY,
+                TileType.WAND,
+                TileType.LOGS,
+                TileType.WAND,
+                TileType.SHIELD,
+                TileType.ROCKS,
+                TileType.LOGS,
+                TileType.KEY,
+                TileType.SWORD,
+                TileType.CHEST,
+            ],
+            real_grid_size,
+        )
+
+        grid = find_grid(_to_region(after_combo), after_combo, simulated_post_combo_grid)
+
+        expected_grid = [
+            TileType.WAND,
+            TileType.WAND,
+            TileType.KEY,
+            TileType.ROCKS,
+            TileType.LOGS,
+            TileType.UNKNOWN,
+            TileType.WAND,
+            TileType.KEY,
+            TileType.LOGS,
+            TileType.ROCKS,
+            TileType.LOGS,
+            TileType.KEY,
+            TileType.ROCKS,
+            TileType.UNKNOWN,
+            TileType.WAND,
+            TileType.LOGS,
+            TileType.LOGS,
+            TileType.WAND,
+            TileType.WAND,
+            TileType.SWORD,
+            TileType.SHIELD,
+            TileType.ROCKS,
+            TileType.KEY,
+            TileType.ROCKS,
+            TileType.SHIELD,
+            TileType.SWORD,
+            TileType.SWORD,
+            TileType.CHEST,
+            TileType.LOGS,
+            TileType.WAND,
+            TileType.CHEST,
+            TileType.KEY,
+            TileType.SWORD,
+            TileType.KEY,
+            TileType.LOGS,
+            TileType.CHEST,
+            TileType.KEY,
+            TileType.SWORD,
+            TileType.WAND,
+            TileType.LOGS,
+            TileType.CHEST,
+            TileType.LOGS,
+            TileType.ROCKS,
+            TileType.SWORD,
+            TileType.SHIELD,
+            TileType.CHEST,
+            TileType.KEY,
+            TileType.WAND,
+            TileType.LOGS,
+            TileType.WAND,
+            TileType.SHIELD,
+            TileType.ROCKS,
+            TileType.LOGS,
+            TileType.KEY,
+            TileType.SWORD,
+            TileType.CHEST,
+        ]
+
+        self.assertEqual(expected_grid, [tile.type for tile in grid])
+
+    def test_two_steps_double_match_combo(self):
+        simulated_post_combo_grid = _a_grid(
+            [
+                TileType.UNKNOWN,
+                TileType.UNKNOWN,
+                TileType.UNKNOWN,
+                TileType.UNKNOWN,
+                TileType.UNKNOWN,
+                TileType.KEY,
+                TileType.ROCKS,
+                TileType.ROCKS,
+                TileType.WAND,
+                TileType.SWORD,
+                TileType.UNKNOWN,
+                TileType.UNKNOWN,
+                TileType.UNKNOWN,
+                TileType.ROCKS,
+                TileType.WAND,
+                TileType.SHIELD,
+                TileType.CHEST,
+                TileType.CHEST,
+                TileType.UNKNOWN,
+                TileType.SWORD,
+                TileType.CHEST,
+                TileType.ROCKS,
+                TileType.CHEST,
+                TileType.CHEST,
+                TileType.SWORD,
+                TileType.CHEST,
+                TileType.CHEST,
+                TileType.KEY,
+                TileType.WAND,
+                TileType.LOGS,
+                TileType.SWORD,
+                TileType.LOGS,
+                TileType.LOGS,
+                TileType.ROCKS,
+                TileType.SWORD,
+                TileType.LOGS,
+                TileType.ROCKS,
+                TileType.SWORD,
+                TileType.CHEST,
+                TileType.CHEST,
+                TileType.KEY,
+                TileType.SHIELD,
+                TileType.KEY,
+                TileType.SHIELD,
+                TileType.SWORD,
+                TileType.LOGS,
+                TileType.KEY,
+                TileType.WAND,
+                TileType.LOGS,
+                TileType.SWORD,
+                TileType.KEY,
+                TileType.CHEST,
+                TileType.SHIELD,
+                TileType.SWORD,
+                TileType.CHEST,
+                TileType.KEY,
+            ],
+            real_grid_size,
+        )
+
+        grid = find_grid(_to_region(two_steps_double_match_combo), two_steps_double_match_combo, simulated_post_combo_grid)
+
+        expected_grid = [
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.UNKNOWN,
+            TileType.SHIELD,
+            TileType.CHEST,
+            TileType.KEY,
+            TileType.ROCKS,
+            TileType.ROCKS,
+            TileType.WAND,
+            TileType.SWORD,
+            TileType.CHEST,
+            TileType.WAND,
+            TileType.WAND,
+            TileType.ROCKS,
+            TileType.WAND,
+            TileType.SHIELD,
+            TileType.CHEST,
+            TileType.CHEST,
+            TileType.KEY,
+            TileType.SWORD,
+            TileType.CHEST,
+            TileType.ROCKS,
+            TileType.CHEST,
+            TileType.CHEST,
+            TileType.SWORD,
+            TileType.CHEST,
+            TileType.CHEST,
+            TileType.KEY,
+            TileType.WAND,
+            TileType.LOGS,
+            TileType.SWORD,
+            TileType.LOGS,
+            TileType.LOGS,
+            TileType.ROCKS,
+            TileType.SWORD,
+            TileType.LOGS,
+            TileType.ROCKS,
+            TileType.SWORD,
+            TileType.CHEST,
+            TileType.CHEST,
+            TileType.KEY,
+            TileType.SHIELD,
+            TileType.KEY,
+            TileType.SHIELD,
+            TileType.SWORD,
+            TileType.LOGS,
+            TileType.KEY,
+            TileType.WAND,
+            TileType.LOGS,
+            TileType.SWORD,
+            TileType.KEY,
+            TileType.CHEST,
+            TileType.SHIELD,
+            TileType.SWORD,
+            TileType.CHEST,
+            TileType.KEY,
         ]
 
         self.assertEqual(expected_grid, [tile.type for tile in grid])
