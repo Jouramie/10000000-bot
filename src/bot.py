@@ -15,7 +15,7 @@ RETRY_DELAY = 0
 WAIT_AFTER_COMBO = 0.5
 
 # TODO backlog
-# At equal impact, choose move with less movement
+# If last move was item move, don't screenshot before next move
 # Add UI options to start stop movements
 # Add UI options to start stop screenshots
 # Give proper value to scrolls

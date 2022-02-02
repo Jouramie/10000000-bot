@@ -2,7 +2,7 @@ import abc
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import reduce
-from typing import Set, Dict, List, Tuple
+from typing import Set, Dict, Tuple
 
 from frozendict import FrozenOrderedDict, frozendict
 
@@ -188,7 +188,7 @@ class Move(metaclass=abc.ABCMeta):
     impact: FrozenOrderedDict[TileType, int]
 
     @abc.abstractmethod
-    def calculate_mouse_movement(self) -> List[Point]:
+    def calculate_mouse_movement(self) -> int:
         raise NotImplementedError
 
     def calculate_score(self, value_per_tile_type: Dict[TileType, int]) -> int:
@@ -211,28 +211,8 @@ class TileMove(Move):
     def get_combo_type(self) -> TileType:
         return self.tile_to_move.type
 
-    def calculate_screen_destination(self) -> Point:
-        """
-        Should work with any size of cluster
-        """
-        any_pair = []
-        for tile in self.cluster.tiles:
-            any_pair.append(tile)
-            if len(any_pair) == 2:
-                break
-
-        tile_centers = any_pair[0].screen_square.find_center(), any_pair[1].screen_square.find_center()
-        pair_screen_distance = tile_centers[0].distance_between(tile_centers[1])
-        pair_grid_distance = any_pair[0].grid_position.distance_between(any_pair[1].grid_position)
-
-        unitary_distance = int(pair_screen_distance / pair_grid_distance)
-
-        first_tile_center = any_pair[0].screen_square.find_center() - any_pair[0].grid_position * unitary_distance
-
-        return first_tile_center + self.grid_destination * unitary_distance
-
-    def calculate_mouse_movement(self) -> List[Point]:
-        return [self.tile_to_move.screen_square.find_center(), self.calculate_screen_destination()]
+    def calculate_mouse_movement(self) -> int:
+        return self.tile_to_move.grid_position.distance_between(self.grid_destination)
 
 
 @dataclass(frozen=True)
@@ -242,11 +222,8 @@ class ItemMove(Move):
     def __str__(self):
         return f"use {str(self.item)}"
 
-    def calculate_mouse_movement(self) -> List[Point]:
-        return [self.item.screen_square.find_center()]
-
-    def calculate_score(self, value_per_tile_type: Dict[TileType, int]) -> int:
-        return super().calculate_score(value_per_tile_type)
+    def calculate_mouse_movement(self) -> int:
+        return 0
 
 
 def create_item_move(item: Item, impact: FrozenOrderedDict[TileType, int] | None = None) -> ItemMove:
@@ -261,7 +238,7 @@ class Objective:
     def select_best_move(self, possible_moves: Set[TileMove]) -> Tuple[TileMove, int] | None:
         value_per_tile_type = TILE_VALUES_PER_OBJECTIVE_TYPES.get(self.type, NO_OBJECTIVE_TILE_VALUES)
 
-        best_move = max(possible_moves, key=lambda x: x.calculate_score(value_per_tile_type))
+        best_move = max(possible_moves, key=lambda x: (x.calculate_score(value_per_tile_type), -x.calculate_mouse_movement()))
         score = best_move.calculate_score(value_per_tile_type)
 
         if score <= 0:
