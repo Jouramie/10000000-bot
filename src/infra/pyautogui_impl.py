@@ -37,20 +37,22 @@ TILE_ASSETS = {
 TILE_DIMENSION = 86
 
 OBJETIVE_ASSETS = {
-    ObjectiveType.ZOMBIE: "assets/objectives/zombie2.png",
-    ObjectiveType.SKELETON: "assets/objectives/skeleton.png",
-    ObjectiveType.SKELETON_ARCHER: "assets/objectives/skeleton-archer.png",
-    ObjectiveType.T_REX: "assets/objectives/t-rex.png",
-    ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier2.png",
-    ObjectiveType.WHITE_DRAGON: "assets/objectives/white-dragon.png",
-    ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
-    ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
-    ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
+    # ObjectiveType.ZOMBIE: "assets/objectives/zombie2.png",
+    # ObjectiveType.SKELETON: "assets/objectives/skeleton.png",
+    # ObjectiveType.SKELETON_ARCHER: "assets/objectives/skeleton-archer.png",
+    ObjectiveType.T_REX: "assets/objectives/t-rex2.png",
+    # ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier2.png",
+    # ObjectiveType.WHITE_DRAGON: "assets/objectives/white-dragon.png",
+    # ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
+    # ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
+    # ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
     ObjectiveType.GOLEM: "assets/objectives/golem2.png",
     ObjectiveType.NINJA: "assets/objectives/ninja2.png",
     ObjectiveType.REPTILIAN: "assets/objectives/reptilian2.png",
     ObjectiveType.TREANT: "assets/objectives/treant2.png",
     ObjectiveType.DEMON: "assets/objectives/demon2.png",
+    ObjectiveType.GHOST: "assets/objectives/ghost2.png",
+    ObjectiveType.DOGGO: "assets/objectives/doggo2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
     ObjectiveType.DOOR: "assets/objectives/door2.png",
 }
@@ -62,14 +64,16 @@ ITEM_ASSETS = {
     ItemType.ROCK_TO_KEY_SCROLL: "assets/items/rock-to-key-scroll.png",
     ItemType.ROCK_TO_WAND_SCROLL: "assets/items/rock-to-wand-scroll.png",
     ItemType.KEY: "assets/items/key.png",
-    ItemType.AXE: "assets/items/axe.png",
+    # ItemType.AXE: "assets/items/axe.png",
     ItemType.BATTLEAXE: "assets/items/battleaxe.png",
-    ItemType.BREAD: "assets/items/bread.png",
+    ItemType.HALBERD: "assets/items/halberd.png",
+    # ItemType.BREAD: "assets/items/bread.png",
     ItemType.CHEESE: "assets/items/cheese.png",
     ItemType.COFFEE: "assets/items/coffee.png",
-    ItemType.RED_ORB: "assets/items/red-orb.png",
-    ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
+    # ItemType.RED_ORB: "assets/items/red-orb.png",
+    # ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
     ItemType.GREEN_ORB: "assets/items/green-orb.png",
+    ItemType.PURPLE_ORB: "assets/items/purple-orb.png",
 }
 
 GRID_SIZE_X = 8
@@ -85,7 +89,7 @@ TESTING_WINDOW_TITLE = "Visionneuse de photos Windows"
 EXCLUDED_WINDOWS_PATTERN = {r"10000000 - .+\.py"}
 GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
 
-SCREENSHOT_LOGGING_ENABLED = GAME_WINDOW_TITLE == REAL_WINDOW_TITLE
+SCREENSHOT_LOGGING_ENABLED = False
 
 
 _grid_left = 0
@@ -236,7 +240,7 @@ def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
     region, screenshot = packed_screenshot
     found_grid = find_grid(region, screenshot)
 
-    if len(found_grid) > 16 and SCREENSHOT_LOGGING_ENABLED:
+    if len(found_grid) > 16 and GAME_WINDOW_TITLE == REAL_WINDOW_TITLE and SCREENSHOT_LOGGING_ENABLED:
         log_screenshot(screenshot)
 
     return found_grid, find_objective(*packed_screenshot), find_items(*packed_screenshot)

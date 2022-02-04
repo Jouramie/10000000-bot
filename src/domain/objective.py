@@ -26,6 +26,8 @@ class ObjectiveType(Enum):
     REPTILIAN = auto()
     TREANT = auto()
     DEMON = auto()
+    GHOST = auto()
+    DOGGO = auto()
     CHEST = auto()
     DOOR = auto()
     # DOOR2 = auto()
@@ -100,6 +102,8 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
     ObjectiveType.REPTILIAN: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.TREANT: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.DEMON: SWORD_RESISTANT_MONSTER_TILE_VALUES,
+    ObjectiveType.GHOST: SWORD_RESISTANT_MONSTER_TILE_VALUES,
+    ObjectiveType.DOGGO: WAND_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
     ObjectiveType.DOOR: GENERIC_KEY_TILE_VALUES,
 }
@@ -147,6 +151,11 @@ ITEM_FLAT_IMPACT = {
     ),
     ItemType.BATTLEAXE: frozendict(
         {
+            TileType.SWORD: 10,
+        }
+    ),
+    ItemType.HALBERD: frozendict(
+        {
             TileType.SWORD: 15,
         }
     ),
@@ -163,6 +172,11 @@ ITEM_FLAT_IMPACT = {
     ItemType.GREEN_ORB: frozendict(
         {
             TileType.WAND: 10,
+        }
+    ),
+    ItemType.PURPLE_ORB: frozendict(
+        {
+            TileType.WAND: 15,
         }
     ),
     ItemType.BREAD: frozendict(

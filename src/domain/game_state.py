@@ -10,6 +10,8 @@ from src.infra.pyautogui_impl import detect_game_state
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+TILE_THRESHOLD = 50
+
 
 @dataclass
 class GameState:
@@ -18,7 +20,7 @@ class GameState:
     items: FrozenSet[Item] = frozenset()
 
     def select_best_move(self) -> TileMove | None:
-        possible_moves = self.grid.fill_with_unknown().find_possible_moves() | {create_item_move(item) for item in self.items}
+        possible_moves = self._find_possible_move()
 
         if not possible_moves:
             logger.warning("No moves available.")
@@ -37,6 +39,16 @@ class GameState:
         best_move, score = packed_move
         logger.info(f"Best move is {str(best_move)} with score {score}.")
         return best_move
+
+    def _find_possible_move(self):
+        possible_moves = {create_item_move(item) for item in self.items}
+
+        if len(self.grid) > TILE_THRESHOLD:
+            possible_moves |= self.grid.fill_with_unknown().find_possible_moves()
+        else:
+            logger.warning(f"Found only {len(game_state.grid)} tiles. Not counting grid in moves selection.")
+
+        return possible_moves
 
 
 game_state = GameState()

@@ -14,12 +14,14 @@ class ItemType(Enum):
     KEY = auto()
     AXE = auto()
     BATTLEAXE = auto()
+    HALBERD = auto()
     BREAD = auto()
     CHEESE = auto()
     COFFEE = auto()
     RED_ORB = auto()
     YELLOW_ORB = auto()
     GREEN_ORB = auto()
+    PURPLE_ORB = auto()
 
     def __str__(self):
         return self.name
