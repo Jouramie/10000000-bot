@@ -3,10 +3,14 @@ from typing import Union
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont
-from PyQt6.QtWidgets import QPushButton, QWidget, QLabel, QGraphicsDropShadowEffect
+from PyQt6.QtWidgets import QWidget, QLabel, QGraphicsDropShadowEffect, QCheckBox
 
+from src import properties
 from src.domain.tile import TileType
 from src.ui.model import GameStateModel
+
+GRID_LEFT = 20
+GRID_TOP = 220
 
 logger = logging.getLogger(__name__)
 
@@ -41,21 +45,22 @@ class Overlay(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        # self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+        self.setGeometry(0, 0, 450, 600)
 
-        self.toggle_btn = QPushButton("Exit", self)
-        self.toggle_btn.setGeometry(1700, 150, 100, 30)
-        self.toggle_btn.clicked.connect(self.close)
+        self.screenshot_logging_cb = QCheckBox("Screenshot logging", self)
+        self.screenshot_logging_cb.move(20, 20)
+        self.screenshot_logging_cb.setChecked(properties.SCREENSHOT_LOGGING_ENABLED)
+        self.screenshot_logging_cb.stateChanged.connect(self.toggle_screenshot_logging)
 
-        self.intangible_btn = QPushButton("Intangible", self)
-        self.intangible_btn.setGeometry(1820, 150, 100, 30)
-        self.intangible_btn.clicked.connect(self.on_intangible)
+        self.movement_cb = QCheckBox("Movements", self)
+        self.movement_cb.move(20, 40)
+        self.movement_cb.setChecked(properties.MOVEMENT_ENABLED)
+        self.movement_cb.stateChanged.connect(self.toggle_movement)
 
         self.objective_label = QLabel(self)
         self.objective_label.setText("No objective yet")
-        self.objective_label.setGeometry(1700, 185, 500, 30)
+        self.objective_label.setGeometry(20, 190, 500, 30)
         font = QFont()
         font.setBold(True)
         self.objective_label.setFont(font)
@@ -69,9 +74,11 @@ class Overlay(QWidget):
 
         self.start = 0
 
-    def on_intangible(self):
-        logger.info("Overlay set to intangible mode.")
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    def toggle_screenshot_logging(self):
+        properties.SCREENSHOT_LOGGING_ENABLED = self.screenshot_logging_cb.isChecked()
+
+    def toggle_movement(self):
+        properties.MOVEMENT_ENABLED = self.movement_cb.isChecked()
 
     def on_game_state_change(self, game_state: GameStateModel):
         self.game_state = game_state
@@ -84,15 +91,12 @@ class Overlay(QWidget):
             logger.debug("Received no tiles to display :(")
             return
 
-        min_left = 1700
-        min_top = 220
-
         painter = QPainter(self)
         for tile in self.game_state.tiles:
             if tile.type == TileType.UNKNOWN:
                 continue
 
-            rect = [min_left + tile.grid_x * TILE_DIMENSION, min_top + tile.grid_y * TILE_DIMENSION, TILE_DIMENSION, TILE_DIMENSION]
+            rect = [GRID_LEFT + tile.grid_x * TILE_DIMENSION, GRID_TOP + tile.grid_y * TILE_DIMENSION, TILE_DIMENSION, TILE_DIMENSION]
             painter.setPen(QPen(TILE_BORDER_COLORS[tile.type], 1))
             painter.setBrush(QBrush(TILE_FILL_COLORS[tile.type], Qt.BrushStyle.SolidPattern))
             painter.drawRect(*rect)

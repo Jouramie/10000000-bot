@@ -4,7 +4,7 @@ from threading import Thread
 
 from PyQt6.QtWidgets import QApplication
 
-from src.bot import main_loop
+from src import bot
 from src.ui.game_state_observer import GameStateObserver
 from src.ui.overlay import Overlay
 
@@ -18,10 +18,11 @@ class Context:
         self.app = QApplication(sys.argv)
 
         # Bot
-        self.bot_thread = Thread(target=main_loop)
+        self.bot_thread = Thread(target=bot.main_loop)
 
         # UI
         self.overlay = Overlay()
+        self.overlay.closeEvent = self.stop
         self.game_state_observer = GameStateObserver(self.overlay.on_game_state_change)
 
     def start(self):
@@ -32,6 +33,10 @@ class Context:
 
         # Overlay
         self.game_state_observer.start()
-        self.overlay.showMaximized()
+        self.overlay.show()
 
         self.app.exec()
+
+    def stop(self):
+        bot.running = False
+        self.game_state_observer.stop()

@@ -28,6 +28,7 @@ class ObjectiveType(Enum):
     DEMON = auto()
     GHOST = auto()
     DOGGO = auto()
+    BEAR = auto()
     CHEST = auto()
     DOOR = auto()
     # DOOR2 = auto()
@@ -104,6 +105,7 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
     ObjectiveType.DEMON: SWORD_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.GHOST: SWORD_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.DOGGO: WAND_RESISTANT_MONSTER_TILE_VALUES,
+    ObjectiveType.BEAR: GENERIC_MONSTER_TILE_VALUES,
     ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
     ObjectiveType.DOOR: GENERIC_KEY_TILE_VALUES,
 }

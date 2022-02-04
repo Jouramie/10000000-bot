@@ -46,3 +46,7 @@ class GameStateObserver:
     def start(self) -> None:
         logger.info("Starting GameStateObserver.")
         self.thread.start()
+
+    def stop(self) -> None:
+        logger.info("Stopping GameStateObserver.")
+        self.thread.stop()

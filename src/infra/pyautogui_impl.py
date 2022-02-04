@@ -11,6 +11,7 @@ import pyscreeze
 import win32gui
 from PIL.Image import Image
 
+from src import properties
 from src.domain.grid import Grid, InconsistentGrid, EmptyGrid
 from src.domain.item import Item, ItemType
 from src.domain.objective import Objective, ObjectiveType, TileMove, ItemMove, Move
@@ -20,8 +21,6 @@ from src.domain.tile import TileType, Tile
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-SAVED_SCREENSHOT_QUANTITY = 20
 
 TILE_ASSETS = {
     TileType.CHEST: "assets/tiles/chest.png",
@@ -46,13 +45,14 @@ OBJETIVE_ASSETS = {
     # ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
     # ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
     # ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
-    ObjectiveType.GOLEM: "assets/objectives/golem2.png",
+    # ObjectiveType.GOLEM: "assets/objectives/golem2.png",
     ObjectiveType.NINJA: "assets/objectives/ninja2.png",
     ObjectiveType.REPTILIAN: "assets/objectives/reptilian2.png",
-    ObjectiveType.TREANT: "assets/objectives/treant2.png",
+    # ObjectiveType.TREANT: "assets/objectives/treant2.png",
     ObjectiveType.DEMON: "assets/objectives/demon2.png",
     ObjectiveType.GHOST: "assets/objectives/ghost2.png",
     ObjectiveType.DOGGO: "assets/objectives/doggo2.png",
+    ObjectiveType.BEAR: "assets/objectives/bear2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
     ObjectiveType.DOOR: "assets/objectives/door2.png",
 }
@@ -63,6 +63,7 @@ ITEM_ASSETS = {
     ItemType.LOG_TO_SWORD_SCROLL: "assets/items/log-to-sword-scroll.png",
     ItemType.ROCK_TO_KEY_SCROLL: "assets/items/rock-to-key-scroll.png",
     ItemType.ROCK_TO_WAND_SCROLL: "assets/items/rock-to-wand-scroll.png",
+    ItemType.ROCK_TO_SWORD_SCROLL: "assets/items/rock-to-sword-scroll.png",
     ItemType.KEY: "assets/items/key.png",
     # ItemType.AXE: "assets/items/axe.png",
     ItemType.BATTLEAXE: "assets/items/battleaxe.png",
@@ -88,8 +89,6 @@ REAL_WINDOW_TITLE = "10000000"
 TESTING_WINDOW_TITLE = "Visionneuse de photos Windows"
 EXCLUDED_WINDOWS_PATTERN = {r"10000000 - .+\.py"}
 GAME_WINDOW_TITLE = REAL_WINDOW_TITLE
-
-SCREENSHOT_LOGGING_ENABLED = False
 
 
 _grid_left = 0
@@ -228,7 +227,7 @@ def log_screenshot(screenshot: Image):
 
     saved_screenshots = os.listdir("logs")
 
-    if len(saved_screenshots) > SAVED_SCREENSHOT_QUANTITY:
+    if len(saved_screenshots) > properties.SAVED_SCREENSHOT_QUANTITY:
         os.remove(Path(f"logs/{sorted(saved_screenshots)[0]}"))
 
 
@@ -240,7 +239,7 @@ def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
     region, screenshot = packed_screenshot
     found_grid = find_grid(region, screenshot)
 
-    if len(found_grid) > 16 and GAME_WINDOW_TITLE == REAL_WINDOW_TITLE and SCREENSHOT_LOGGING_ENABLED:
+    if len(found_grid) > 16 and GAME_WINDOW_TITLE == REAL_WINDOW_TITLE and properties.SCREENSHOT_LOGGING_ENABLED:
         log_screenshot(screenshot)
 
     return found_grid, find_objective(*packed_screenshot), find_items(*packed_screenshot)
