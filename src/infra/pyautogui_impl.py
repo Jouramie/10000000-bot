@@ -20,7 +20,7 @@ from src.domain.screen import ScreenSquare, Point
 from src.domain.tile import TileType, Tile
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 GRID_BOX = (300, 180, 1200, 800)
 ITEMS_BOX = (20, 60, 290, 330)
@@ -41,20 +41,20 @@ TILE_ASSETS = {
 TILE_DIMENSION = 86
 
 OBJETIVE_ASSETS = {
-    # ObjectiveType.ZOMBIE: "assets/objectives/zombie2.png",
-    # ObjectiveType.SKELETON: "assets/objectives/skeleton.png",
-    # ObjectiveType.SKELETON_ARCHER: "assets/objectives/skeleton-archer.png",
+    ObjectiveType.ZOMBIE: "assets/objectives/zombie2.png",
+    ObjectiveType.SKELETON: "assets/objectives/skeleton.png",
+    ObjectiveType.SKELETON_ARCHER: "assets/objectives/skeleton-archer.png",
     ObjectiveType.T_REX: "assets/objectives/t-rex2.png",
-    # ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier2.png",
-    # ObjectiveType.WHITE_DRAGON: "assets/objectives/white-dragon.png",
-    # ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
-    # ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
-    # ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
-    # ObjectiveType.GOLEM: "assets/objectives/golem2.png",
-    # ObjectiveType.NINJA: "assets/objectives/ninja2.png",
+    ObjectiveType.FALLEN_SOLDIER: "assets/objectives/fallen-soldier2.png",
+    ObjectiveType.WHITE_DRAGON: "assets/objectives/white-dragon.png",
+    ObjectiveType.FIRE_ELEMENTAL: "assets/objectives/fire-elemental.png",
+    ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
+    ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
+    ObjectiveType.GOLEM: "assets/objectives/golem2.png",
+    ObjectiveType.NINJA: "assets/objectives/ninja2.png",
     ObjectiveType.REPTILIAN: "assets/objectives/reptilian2.png",
-    # ObjectiveType.TREANT: "assets/objectives/treant2.png",
-    # ObjectiveType.DEMON: "assets/objectives/demon2.png",
+    ObjectiveType.TREANT: "assets/objectives/treant2.png",
+    ObjectiveType.DEMON: "assets/objectives/demon2.png",
     ObjectiveType.GHOST: "assets/objectives/ghost2.png",
     ObjectiveType.DOGGO: "assets/objectives/doggo2.png",
     ObjectiveType.BEAR: "assets/objectives/bear2.png",
@@ -73,17 +73,17 @@ ITEM_ASSETS = {
     ItemType.ROCK_TO_WAND_SCROLL: "assets/items/rock-to-wand-scroll.png",
     ItemType.ROCK_TO_SWORD_SCROLL: "assets/items/rock-to-sword-scroll.png",
     ItemType.KEY: "assets/items/key.png",
-    # ItemType.AXE: "assets/items/axe.png",
+    ItemType.AXE: "assets/items/axe.png",
     ItemType.BATTLEAXE: "assets/items/battleaxe.png",
     ItemType.HALBERD: "assets/items/halberd.png",
     ItemType.GREAT_AXE: "assets/items/great-axe.png",
-    # ItemType.BREAD: "assets/items/bread.png",
-    # ItemType.CHEESE: "assets/items/cheese.png",
+    ItemType.BREAD: "assets/items/bread.png",
+    ItemType.CHEESE: "assets/items/cheese.png",
     ItemType.COFFEE: "assets/items/coffee.png",
     ItemType.HAM: "assets/items/ham.png",
     ItemType.PIE: "assets/items/pie.png",
-    # ItemType.RED_ORB: "assets/items/red-orb.png",
-    # ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
+    ItemType.RED_ORB: "assets/items/red-orb.png",
+    ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
     ItemType.GREEN_ORB: "assets/items/green-orb.png",
     ItemType.PURPLE_ORB: "assets/items/purple-orb.png",
     ItemType.BLUE_ORB: "assets/items/blue-orb.png",
@@ -94,8 +94,16 @@ GRID_SIZE_Y = 7
 GRID_SIZE = Point(GRID_SIZE_X, GRID_SIZE_Y)
 
 
-SMALL_DISTANCE_MOUSE_SECONDS_PER_TILE = 0.15
-LARGE_DISTANCE_MOUSE_SECONDS_PER_TILE = 0.10
+SECONDS_PER_TILE_DISTANCE = {
+    1: 0.11,
+    2: 0.25,
+    3: 0.37,
+    4: 0.48,
+    5: 0.50,
+    6: 0.50,
+    7: 0.50,
+    8: 0.50,
+}
 
 REAL_WINDOW_TITLE = "10000000"
 TESTING_WINDOW_TITLE = "Visionneuse de photos Windows"
@@ -233,7 +241,7 @@ def find_items(offset: Point, screenshot: Image) -> FrozenSet[Item]:
     logger.debug(f"Looking for items.")
 
     for item_assets, asset in ITEM_ASSETS.items():
-        square = locate_on_window(asset, Point(offset.x + ITEMS_BOX[0], offset.y + ITEMS_BOX[1]), screenshot.crop(ITEMS_BOX), grayscale=True, confidence=0.85)
+        square = locate_on_window(asset, Point(offset.x + ITEMS_BOX[0], offset.y + ITEMS_BOX[1]), screenshot.crop(ITEMS_BOX), grayscale=True)
         if square is not None:
             items.append(Item(item_assets, ScreenSquare(square.left, square.top, square.height, square.width)))
 
@@ -275,6 +283,9 @@ def do_move(move: Move) -> float:
 
 @do_move.register
 def _(move: TileMove) -> float:
+    if move.calculate_grid_distance() == 0:
+        return 0
+
     logger.info(
         f"Completing cluster {move.get_combo_type()} "
         + reduce(lambda x, y: x + y, (f"({tile.grid_position.x}, {tile.grid_position.y}) " for tile in move.cluster.tiles))
@@ -282,18 +293,15 @@ def _(move: TileMove) -> float:
         f"moving to ({move.grid_destination.x}, {move.grid_destination.y}) for expected impact " + str(dict(move.impact))
     )
 
-    start_drag = grid_to_screen(move.tile_to_move.grid_position).find_center()
-    end_drag = grid_to_screen(move.grid_destination).find_center()
+    shift = move.calculate_shift()
+    start_drag = grid_to_screen(shift[0]).find_center()
+    end_drag = grid_to_screen(shift[1]).find_center()
 
     logger.debug(f"Starting drag from {start_drag}.")
     pyautogui.moveTo(start_drag.x, start_drag.y)
     logger.debug(f"Ending drag to {end_drag}.")
-    grid_distance = move.tile_to_move.grid_position.distance_between(move.grid_destination)
-    if grid_distance < 3:
-        duration = grid_distance * SMALL_DISTANCE_MOUSE_SECONDS_PER_TILE
-    else:
-        duration = grid_distance * LARGE_DISTANCE_MOUSE_SECONDS_PER_TILE
-    pyautogui.dragTo(end_drag.x, end_drag.y, duration=duration)
+    grid_distance = move.calculate_shift_distance()
+    pyautogui.dragTo(end_drag.x, end_drag.y, duration=SECONDS_PER_TILE_DISTANCE[grid_distance])
 
     return 0.5
 

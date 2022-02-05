@@ -230,7 +230,7 @@ class Move(metaclass=abc.ABCMeta):
     impact: FrozenOrderedDict[TileType, int]
 
     @abc.abstractmethod
-    def calculate_mouse_movement(self) -> int:
+    def calculate_grid_distance(self) -> int:
         raise NotImplementedError
 
     def calculate_score(self, value_per_tile_type: Dict[TileType, int]) -> int:
@@ -253,7 +253,26 @@ class TileMove(Move):
     def get_combo_type(self) -> TileType:
         return self.tile_to_move.type
 
-    def calculate_mouse_movement(self) -> int:
+    def calculate_shift(self) -> Tuple[Point, Point]:
+        if self.tile_to_move.grid_position.x == self.grid_destination.x and self.calculate_grid_distance() > 3:
+            distance = self.grid_destination.y - self.tile_to_move.grid_position.y
+            if distance < 0:
+                return Point(self.grid_destination.x, 0), Point(self.grid_destination.x, 7 + distance)
+            return Point(self.grid_destination.x, 6), Point(self.grid_destination.x, distance - 1)
+
+        if self.tile_to_move.grid_position.y == self.grid_destination.y and self.calculate_grid_distance() > 4:
+            distance = self.grid_destination.x - self.tile_to_move.grid_position.x
+            if distance < 0:
+                return Point(0, self.grid_destination.y), Point(8 + distance, self.grid_destination.y)
+            return Point(7, self.grid_destination.y), Point(distance - 1, self.grid_destination.y)
+
+        return self.tile_to_move.grid_position, self.grid_destination
+
+    def calculate_shift_distance(self) -> int:
+        shift = self.calculate_shift()
+        return shift[0].distance_between(shift[1])
+
+    def calculate_grid_distance(self) -> int:
         return self.tile_to_move.grid_position.distance_between(self.grid_destination)
 
 
@@ -264,7 +283,7 @@ class ItemMove(Move):
     def __str__(self):
         return f"use {str(self.item)}"
 
-    def calculate_mouse_movement(self) -> int:
+    def calculate_grid_distance(self) -> int:
         return 0
 
 
@@ -280,7 +299,7 @@ class Objective:
     def select_best_move(self, possible_moves: Set[TileMove]) -> Tuple[TileMove, int] | None:
         value_per_tile_type = TILE_VALUES_PER_OBJECTIVE_TYPES.get(self.type, NO_OBJECTIVE_TILE_VALUES)
 
-        best_move = max(possible_moves, key=lambda x: (x.calculate_score(value_per_tile_type), -x.calculate_mouse_movement()))
+        best_move = max(possible_moves, key=lambda x: (x.calculate_score(value_per_tile_type), -x.calculate_grid_distance()))
         score = best_move.calculate_score(value_per_tile_type)
 
         if score <= 0:
