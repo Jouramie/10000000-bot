@@ -29,6 +29,9 @@ class ObjectiveType(Enum):
     GHOST = auto()
     DOGGO = auto()
     BEAR = auto()
+    BLACK_DRAGON = auto()
+    EARTH_ELEMENTAL = auto()
+    DARK_ELF = auto()
     CHEST = auto()
     DOOR = auto()
     # DOOR2 = auto()
@@ -106,6 +109,9 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
     ObjectiveType.GHOST: SWORD_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.DOGGO: WAND_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.BEAR: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.BLACK_DRAGON: GENERIC_MONSTER_TILE_VALUES,
+    ObjectiveType.EARTH_ELEMENTAL: SWORD_RESISTANT_MONSTER_TILE_VALUES,
+    ObjectiveType.DARK_ELF: WAND_RESISTANT_MONSTER_TILE_VALUES,
     ObjectiveType.CHEST: GENERIC_KEY_TILE_VALUES,
     ObjectiveType.DOOR: GENERIC_KEY_TILE_VALUES,
 }
@@ -113,32 +119,32 @@ TILE_VALUES_PER_OBJECTIVE_TYPES = {
 ITEM_FLAT_IMPACT = {
     ItemType.LOG_TO_KEY_SCROLL: frozendict(
         {
-            TileType.KEY: 10,
+            TileType.KEY: 6,
         }
     ),
     ItemType.LOG_TO_SWORD_SCROLL: frozendict(
         {
-            TileType.SWORD: 10,
+            TileType.SWORD: 6,
         }
     ),
     ItemType.LOG_TO_WAND_SCROLL: frozendict(
         {
-            TileType.WAND: 10,
+            TileType.WAND: 6,
         }
     ),
     ItemType.ROCK_TO_KEY_SCROLL: frozendict(
         {
-            TileType.KEY: 10,
+            TileType.KEY: 6,
         }
     ),
     ItemType.ROCK_TO_SWORD_SCROLL: frozendict(
         {
-            TileType.SWORD: 10,
+            TileType.SWORD: 6,
         }
     ),
     ItemType.ROCK_TO_WAND_SCROLL: frozendict(
         {
-            TileType.WAND: 10,
+            TileType.WAND: 6,
         }
     ),
     ItemType.KEY: frozendict(
@@ -148,52 +154,72 @@ ITEM_FLAT_IMPACT = {
     ),
     ItemType.AXE: frozendict(
         {
-            TileType.SWORD: 10,
+            TileType.SWORD: 6,
         }
     ),
     ItemType.BATTLEAXE: frozendict(
         {
-            TileType.SWORD: 10,
+            TileType.SWORD: 6,
         }
     ),
     ItemType.HALBERD: frozendict(
         {
-            TileType.SWORD: 15,
+            TileType.SWORD: 6,
+        }
+    ),
+    ItemType.GREAT_AXE: frozendict(
+        {
+            TileType.SWORD: 6,
         }
     ),
     ItemType.RED_ORB: frozendict(
         {
-            TileType.WAND: 10,
+            TileType.WAND: 6,
         }
     ),
     ItemType.YELLOW_ORB: frozendict(
         {
-            TileType.WAND: 10,
+            TileType.WAND: 6,
         }
     ),
     ItemType.GREEN_ORB: frozendict(
         {
-            TileType.WAND: 10,
+            TileType.WAND: 6,
         }
     ),
     ItemType.PURPLE_ORB: frozendict(
         {
-            TileType.WAND: 15,
+            TileType.WAND: 6,
+        }
+    ),
+    ItemType.BLUE_ORB: frozendict(
+        {
+            TileType.WAND: 6,
         }
     ),
     ItemType.BREAD: frozendict(
         {
-            TileType.SHIELD: 10,
+            TileType.SHIELD: 6,
         }
     ),
     ItemType.CHEESE: frozendict(
         {
-            TileType.SHIELD: 10,
+            TileType.SHIELD: 6,
         }
     ),
     ItemType.COFFEE: frozendict(
         {
-            TileType.SHIELD: 10,
+            TileType.SHIELD: 6,
+        }
+    ),
+    ItemType.HAM: frozendict(
+        {
+            TileType.SHIELD: 6,
+        }
+    ),
+    ItemType.PIE: frozendict(
+        {
+            TileType.SHIELD: 6,
         }
     ),
 }

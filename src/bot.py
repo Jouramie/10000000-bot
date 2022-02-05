@@ -2,8 +2,8 @@ import logging
 from time import sleep
 
 from src import properties
-from src.domain.game_state import update_game_state
-from src.infra.pyautogui_impl import do_move
+from src.domain.game_state import GameState
+from src.infra.pyautogui_impl import do_move, detect_game_state
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -20,15 +20,26 @@ logger.setLevel(logging.DEBUG)
 
 running = True
 
+game_state = GameState()
+
+
+def fetch_game_state() -> GameState:
+    global game_state
+    return game_state
+
 
 def main_loop() -> None:
     global running
+    global game_state
+
     logger.info("Bot is running.")
     try:
         while running:
             logger.info("Updating game state.")
 
-            game_state = update_game_state()
+            game_state = detect_game_state()
+            logger.info(f"GameState updated. {len(game_state.grid)} tiles. Objective: {game_state.objective.type}.")
+
             best_move = game_state.select_best_move()
 
             if properties.MOVEMENT_ENABLED and best_move is not None:

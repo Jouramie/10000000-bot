@@ -58,6 +58,11 @@ class Overlay(QWidget):
         self.movement_cb.setChecked(properties.MOVEMENT_ENABLED)
         self.movement_cb.stateChanged.connect(self.toggle_movement)
 
+        self.auto_run_again_cb = QCheckBox("Auto run gain", self)
+        self.auto_run_again_cb.move(20, 60)
+        self.auto_run_again_cb.setChecked(properties.AUTO_RUN_AGAIN_ENABLED)
+        self.auto_run_again_cb.stateChanged.connect(self.toggle_auto_run_again)
+
         self.objective_label = QLabel(self)
         self.objective_label.setText("No objective yet")
         self.objective_label.setGeometry(20, 190, 500, 30)
@@ -79,6 +84,9 @@ class Overlay(QWidget):
 
     def toggle_movement(self):
         properties.MOVEMENT_ENABLED = self.movement_cb.isChecked()
+
+    def toggle_auto_run_again(self):
+        properties.AUTO_RUN_AGAIN_ENABLED = self.auto_run_again_cb.isChecked()
 
     def on_game_state_change(self, game_state: GameStateModel):
         self.game_state = game_state

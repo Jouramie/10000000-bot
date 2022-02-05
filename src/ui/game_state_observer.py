@@ -4,7 +4,7 @@ from typing import Callable
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 
-from src.domain.game_state import fetch_game_state
+from src.bot import fetch_game_state
 from src.ui.model import GameStateModel, to_model
 
 logger = logging.getLogger(__name__)

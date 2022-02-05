@@ -12,6 +12,7 @@ import win32gui
 from PIL.Image import Image
 
 from src import properties
+from src.domain.game_state import GameState
 from src.domain.grid import Grid, InconsistentGrid, EmptyGrid
 from src.domain.item import Item, ItemType
 from src.domain.objective import Objective, ObjectiveType, TileMove, ItemMove, Move
@@ -19,7 +20,11 @@ from src.domain.screen import ScreenSquare, Point
 from src.domain.tile import TileType, Tile
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+
+GRID_BOX = (300, 180, 1200, 800)
+ITEMS_BOX = (20, 60, 290, 330)
+OBJECTIVES_BOX = (300, 50, 1200, 190)
 
 
 TILE_ASSETS = {
@@ -46,13 +51,16 @@ OBJETIVE_ASSETS = {
     # ObjectiveType.WATER_ELEMENTAL: "assets/objectives/water-elemental2.png",
     # ObjectiveType.RED_DRAGON: "assets/objectives/red-dragon2.png",
     # ObjectiveType.GOLEM: "assets/objectives/golem2.png",
-    ObjectiveType.NINJA: "assets/objectives/ninja2.png",
+    # ObjectiveType.NINJA: "assets/objectives/ninja2.png",
     ObjectiveType.REPTILIAN: "assets/objectives/reptilian2.png",
     # ObjectiveType.TREANT: "assets/objectives/treant2.png",
-    ObjectiveType.DEMON: "assets/objectives/demon2.png",
+    # ObjectiveType.DEMON: "assets/objectives/demon2.png",
     ObjectiveType.GHOST: "assets/objectives/ghost2.png",
     ObjectiveType.DOGGO: "assets/objectives/doggo2.png",
     ObjectiveType.BEAR: "assets/objectives/bear2.png",
+    ObjectiveType.BLACK_DRAGON: "assets/objectives/black-dragon2.png",
+    ObjectiveType.EARTH_ELEMENTAL: "assets/objectives/earth-elemental2.png",
+    ObjectiveType.DARK_ELF: "assets/objectives/dark-elf2.png",
     ObjectiveType.CHEST: "assets/objectives/chest2.png",
     ObjectiveType.DOOR: "assets/objectives/door2.png",
 }
@@ -68,13 +76,17 @@ ITEM_ASSETS = {
     # ItemType.AXE: "assets/items/axe.png",
     ItemType.BATTLEAXE: "assets/items/battleaxe.png",
     ItemType.HALBERD: "assets/items/halberd.png",
+    ItemType.GREAT_AXE: "assets/items/great-axe.png",
     # ItemType.BREAD: "assets/items/bread.png",
-    ItemType.CHEESE: "assets/items/cheese.png",
+    # ItemType.CHEESE: "assets/items/cheese.png",
     ItemType.COFFEE: "assets/items/coffee.png",
+    ItemType.HAM: "assets/items/ham.png",
+    ItemType.PIE: "assets/items/pie.png",
     # ItemType.RED_ORB: "assets/items/red-orb.png",
     # ItemType.YELLOW_ORB: "assets/items/yellow-orb.png",
     ItemType.GREEN_ORB: "assets/items/green-orb.png",
     ItemType.PURPLE_ORB: "assets/items/purple-orb.png",
+    ItemType.BLUE_ORB: "assets/items/blue-orb.png",
 }
 
 GRID_SIZE_X = 8
@@ -144,23 +156,27 @@ def screenshot_window(window_title: str) -> Tuple[pyscreeze.Box, Image] | None:
 
     logger.debug(f"Game window located at {region}.")
     screenshot = pyautogui.screenshot(region=region)
+    logger.debug(f"Screenshot size is {screenshot.size}.")
     # screenshot.show()
     return region, screenshot
 
 
-def locate_all_on_window(needle_image, region: pyscreeze.Box, screenshot: Image, **kwargs) -> List[pyscreeze.Box]:
-    return [
-        pyscreeze.Box(box.left + region.left, box.top + region.top, box.width, box.height) for box in pyautogui.locateAll(needle_image, screenshot, **kwargs)
-    ]
+def locate_all_on_window(needle_image, offset: Point, screenshot: Image, **kwargs) -> List[pyscreeze.Box]:
+    return [pyscreeze.Box(box.left + offset.x, box.top + offset.y, box.width, box.height) for box in pyautogui.locateAll(needle_image, screenshot, **kwargs)]
 
 
-def find_grid(region: pyscreeze.Box, screenshot: Image) -> Grid:
+def locate_on_window(needle_image, offset: Point, screenshot: Image, **kwargs) -> pyscreeze.Box:
+    box = pyautogui.locate(needle_image, screenshot, **kwargs)
+    return pyscreeze.Box(box.left + offset.x, box.top + offset.y, box.width, box.height) if box is not None else None
+
+
+def find_grid(offset: Point, screenshot: Image) -> Grid:
     """Should detect 8x7 56 tiles."""
     # TODO lower confidence and undupe images
     prospect_tiles = [
         (tile_type, ScreenSquare(tile.left, tile.top, tile.height, tile.width))
         for tile_type, asset in TILE_ASSETS.items()
-        for tile in locate_all_on_window(asset, region, screenshot, grayscale=True)
+        for tile in locate_all_on_window(asset, Point(offset.x + GRID_BOX[0], offset.y + GRID_BOX[1]), screenshot.crop(GRID_BOX), grayscale=True)
     ]
 
     if not prospect_tiles:
@@ -194,12 +210,16 @@ def find_grid(region: pyscreeze.Box, screenshot: Image) -> Grid:
     return grid
 
 
-def find_objective(region: pyscreeze.Box, screenshot: Image) -> Objective:
-    objectives = [
-        Objective(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
-        for objective_assets, asset in OBJETIVE_ASSETS.items()
-        for square in locate_all_on_window(asset, region, screenshot, grayscale=True, confidence=0.85)
-    ]
+def find_objective(offset: Point, screenshot: Image) -> Objective:
+    objectives = []
+    logger.debug(f"Looking for objectives.")
+
+    for objective_assets, asset in OBJETIVE_ASSETS.items():
+        square = locate_on_window(
+            asset, Point(offset.x + OBJECTIVES_BOX[0], offset.y + OBJECTIVES_BOX[1]), screenshot.crop(OBJECTIVES_BOX), grayscale=True, confidence=0.85
+        )
+        if square is not None:
+            objectives.append(Objective(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width)))
 
     if not objectives:
         return Objective()
@@ -208,12 +228,14 @@ def find_objective(region: pyscreeze.Box, screenshot: Image) -> Objective:
     return sorted(objectives, key=lambda x: x.screen_square.left)[0]
 
 
-def find_items(region: pyscreeze.Box, screenshot: Image) -> FrozenSet[Item]:
-    items = {
-        Item(objective_assets, ScreenSquare(square.left, square.top, square.height, square.width))
-        for objective_assets, asset in ITEM_ASSETS.items()
-        for square in locate_all_on_window(asset, region, screenshot, grayscale=True)
-    }
+def find_items(offset: Point, screenshot: Image) -> FrozenSet[Item]:
+    items = []
+    logger.debug(f"Looking for items.")
+
+    for item_assets, asset in ITEM_ASSETS.items():
+        square = locate_on_window(asset, Point(offset.x + ITEMS_BOX[0], offset.y + ITEMS_BOX[1]), screenshot.crop(ITEMS_BOX), grayscale=True, confidence=0.85)
+        if square is not None:
+            items.append(Item(item_assets, ScreenSquare(square.left, square.top, square.height, square.width)))
 
     logger.info(f"Found items {[str(item) for item in items]}.")
     return frozenset(items)
@@ -231,18 +253,19 @@ def log_screenshot(screenshot: Image):
         os.remove(Path(f"logs/{sorted(saved_screenshots)[0]}"))
 
 
-def detect_game_state() -> Tuple[Grid, Objective, FrozenSet[Item]]:
+def detect_game_state() -> GameState:
     packed_screenshot = screenshot_window(GAME_WINDOW_TITLE)
     if packed_screenshot is None:
-        return EmptyGrid(), Objective(), frozenset()
+        return GameState(EmptyGrid(), Objective(), frozenset())
 
     region, screenshot = packed_screenshot
-    found_grid = find_grid(region, screenshot)
+    offset = Point(region.left, region.top)
+    found_grid = find_grid(offset, screenshot)
 
     if len(found_grid) > 16 and GAME_WINDOW_TITLE == REAL_WINDOW_TITLE and properties.SCREENSHOT_LOGGING_ENABLED:
         log_screenshot(screenshot)
 
-    return found_grid, find_objective(*packed_screenshot), find_items(*packed_screenshot)
+    return GameState(found_grid, find_objective(offset, screenshot), find_items(offset, screenshot))
 
 
 @singledispatch
